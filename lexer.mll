@@ -24,8 +24,6 @@ let digit = ['0'-'9']
 let id = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let escape_char = '\\' ('n' | 't' | 'r' | '0'| '\'' | '\"' |('x' (digit|['A'-'F' 'a'-'f']) (digit|['A'-'F' 'a'-'f'])) | '\\')
 let escape = ['\\' '\n' '\'' '\n' '\r' '\t' '\b' '\ '] 
-(* let op = '=' | "==" | "!=" | '>' | '<' | ">=" | "<="    | '&' | '!' | "&&" | "||" | '?' | ':' | ',' | "++" | "--" | "+=" | "*=" | "/=" | "%=" *)
-
 
 rule edsger = parse
            | digit+ as integer
@@ -112,6 +110,7 @@ rule edsger = parse
                                                      ( let lexbuf' = Lexing.from_channel (open_in file)
                                                        in Queue.push (lexbuf', file) file_queue ; 
                                                           Queue.push file file_set;
+                                                          Parser.start edsger lexbuf';
                                                           edsger lexbuf
                                                      )
                                                    else 
