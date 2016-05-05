@@ -18,7 +18,7 @@ compiler: parser semantic
 	ocamlc -c parser.mli
 	ocamlc -c main.ml
 
-semantic: semantic.ml 
+semantic: semantic.mli 
 	ocamlc -c semantic.mli
 
 clean: 
