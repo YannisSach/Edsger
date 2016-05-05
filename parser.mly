@@ -1,42 +1,46 @@
+%{
+Open Semantic
+%}
+
 %token T_QUES
 %token EOL
 %token T_EOF
 %token T_PLUS T_MINUS T_TIMES T_DIV T_MOD
-%token T_ID
+%token <string>T_ID
 %token <int> T_INT
 %token <float> T_DOUBLE
 %token <char> T_CHAR
 %token <string> T_STRING
-        %token T_IF
-        %token T_BOOLTYPE        
-        %token T_BREAK      
-        %token T_CHARTYPE        
-        %token T_CONTINUE        
-        %token T_DELETE        
-        %token T_DOUBLETYPE
-        %token T_FALSE        
-        %token T_INTTYPE
-        %token T_NEW
-        %token T_NULL
-        %token T_RETURN
-        %token T_TRUE
-        %token T_ELSE
-        %token T_FOR
-        %token T_VOID
-        %token T_BYREF
-        %token T_SEMIC
-        %token T_PLUS T_MINUS        /* lowest precedence */
-        %token T_TIMES T_DIV T_MOD
-        %token T_PP  T_MM 
-        %token T_AMP T_EX
-        %token T_AND T_OR
-        %token T_ASS T_PEQ  T_MIEQ T_TEQ  T_DEQ T_MEQ
-        %token T_COMMA 
-        %token T_EQ T_DIF
-        %token T_BIG T_SMALL T_BEQ T_SEQ  T_QUES T_COLON
-        %token T_LP T_RP
-        %token T_RSB T_LSB
-        %token T_RB T_LB
+%token T_IF
+%token T_BOOLTYPE        
+%token T_BREAK      
+%token T_CHARTYPE        
+%token T_CONTINUE        
+%token T_DELETE        
+%token T_DOUBLETYPE
+%token T_FALSE        
+%token T_INTTYPE
+%token T_NEW
+%token T_NULL
+%token T_RETURN
+%token T_TRUE
+%token T_ELSE
+%token T_FOR
+%token T_VOID
+%token T_BYREF
+%token T_SEMIC
+%token T_PLUS T_MINUS        /* lowest precedence */
+%token T_TIMES T_DIV T_MOD
+%token T_PP  T_MM 
+%token T_AMP T_EX
+%token T_AND T_OR
+%token T_ASS T_PEQ  T_MIEQ T_TEQ  T_DEQ T_MEQ
+%token T_COMMA 
+%token T_EQ T_DIF
+%token T_BIG T_SMALL T_BEQ T_SEQ  T_QUES T_COLON
+%token T_LP T_RP
+%token T_RSB T_LSB
+%token T_RB T_LB
         
 /*--------------------------ORDER---------------------------*/
         %nonassoc EXPLIST /*Na to ksanadoume ayto*/
@@ -68,58 +72,58 @@
 
         %type <unit> start 
         %%
-        start: program T_EOF {()}
+        start: program T_EOF {Program $1}
 
         program:
-            program declaration {()} 
-            | declaration {()}
+            program declaration {$1 @ [$2] } 
+            | declaration {[$1]}
                     ;
 
         declaration:
-          variable_declaration  {()}
-          |function_declaration  {()}
-          |function_definition {()}
+          variable_declaration  {$1}
+          |function_declaration  {$1}
+          |function_definition {$1}
         ;                                                  ;
 
         variable_declaration: 
-          type_t declarators T_SEMIC {()}   
+          type_t declarators T_SEMIC {Variable_dec ($1,$2)}   
         ;
  
        /* type_t: 
-              basic_type {()}
-              |type_t T_TIMES %prec TIMES{()}
+              basic_type {(Type $1)}
+              |type_t T_TIMES %prec TIMES{Type ($1^$2)}
                       ;
                         */
        type_t:
-        basic_type star %prec TIMES{()}
+        basic_type star %prec TIMES{$1^$2}
                       ;
        star:
-             {()}
-             |star T_TIMES{()}
+             {""}
+             |star T_TIMES{($1^"*")}
                        ;
                        
         basic_type: 
-                    T_INTTYPE  {()}
-                    | T_CHARTYPE  {()}
-                    | T_BOOLTYPE  {()} 
-                    | T_DOUBLETYPE {()}
+                    T_INTTYPE  {("int")}
+                    | T_CHARTYPE  {("char")}
+                    | T_BOOLTYPE  {("bool")} 
+                    | T_DOUBLETYPE {("double")}
                 ;
 
         declarator: 
-          T_ID {()}
-          | T_ID T_LSB constant_expression T_RSB {()}
+          T_ID {Simple_declarator $1}
+          | T_ID T_LSB constant_expression T_RSB {Complex_declarator ($1,$3)}
                 ;
         
         declarators:
-          declarator T_COMMA declarators {()}
-          |declarator {()}
+          declarator T_COMMA declarators {$1::$3}
+          |declarator {[$1]}
         ;
         
         function_declaration:
-         type_t T_ID T_LP T_RP T_SEMIC {()} 
-         |type_t T_ID T_LP parameter_list T_RP T_SEMIC {()}
-         |T_VOID T_ID T_LP T_RP T_SEMIC {()} 
-         |T_VOID T_ID T_LP parameter_list T_RP T_SEMIC {()}
+         type_t T_ID T_LP T_RP T_SEMIC {Function_dec ($1,$2,[])} 
+         |type_t T_ID T_LP parameter_list T_RP T_SEMIC {Function_dec($1,$2,$4)}
+         |T_VOID T_ID T_LP T_RP T_SEMIC {Function_dec("void",$2,[])} 
+         |T_VOID T_ID T_LP parameter_list T_RP T_SEMIC {Function_dec("void",$2,$4)}
                 
         ;
 
@@ -130,103 +134,103 @@
         ;*/
 
           parameter_list:
-            parameter parameters {()}
+            parameter parameters {$1::$2}
         ;
 
            parameters :
-             {()}
-             |T_COMMA parameter parameters {()}
+             {[]}
+             |T_COMMA parameter parameters {$2:$3}
          ;
 
            parameter : 
-             T_BYREF type_t T_ID {()}
-             |type_t T_ID {()}
+             T_BYREF type_t T_ID {By_ref_param ($2,$3)}
+             |type_t T_ID {By_val_param ($1,$2)}
                      ;
 
                        function_definition: 
-                         type_t T_ID T_LP T_RP T_LB declarations statements T_RB {()}
-                         |  type_t T_ID T_LP parameter_list T_RP T_LB declarations statements T_RB {()}
+                         type_t T_ID T_LP T_RP T_LB declarations statements T_RB {Function_def($1,$2,[],$6,$7)}
+                         |  type_t T_ID T_LP parameter_list T_RP T_LB declarations statements T_RB {Function_def($1,$2,$4,$7,$8)}
 
-                         |T_VOID T_ID T_LP T_RP T_LB declarations statements T_RB {()}
-                         |T_VOID T_ID T_LP parameter_list T_RP T_LB declarations statements T_RB {()}
+                         |T_VOID T_ID T_LP T_RP T_LB declarations statements T_RB {Function_def("void",$2,[],$6,$7)}
+                         |T_VOID T_ID T_LP parameter_list T_RP T_LB declarations statements T_RB {Function_def("void",$2,$4,$7,$8)}
                      ;
-
+                       
         declarations:
-             {()}
-          |declaration declarations {()}
+             {[]}
+          |declaration declarations {$1::$2}
                      ;
 
 
        statements:
-             {()}
-                   |statements statement {()}
+             {[]}
+                   |statements statement {$1@[$2]}
                      ;
         statement: 
-          T_SEMIC{()}
-          | expression T_SEMIC {()}
-          | T_LB statements T_RB {()}
-          | T_IF T_LP expression T_RP statement %prec IF_STMNT{()} 
-          | T_IF T_LP expression T_RP statement T_ELSE statement {()} 
-          | optional_t_id_t_colon T_FOR T_LP optional_expression T_SEMIC optional_expression T_SEMIC optional_expression T_RP statement {()}
-          | T_CONTINUE  T_SEMIC  {()}
-          | T_CONTINUE T_ID T_SEMIC  {()} 
-          | T_BREAK  T_SEMIC  {()}
-          | T_BREAK T_ID T_SEMIC {()}
-          | T_RETURN  T_SEMIC {()}
-          | T_RETURN expression T_SEMIC {()}
+          T_SEMIC{Expression None}
+          | expression T_SEMIC {Expression expression}
+          | T_LB statements T_RB {Statements $2}
+          | T_IF T_LP expression T_RP statement %prec IF_STMNT{If_stmt($3,$5)} 
+          | T_IF T_LP expression T_RP statement T_ELSE statement {If_else_stmt($3,$5,$7)} 
+          | optional_t_id_t_colon T_FOR T_LP optional_expression T_SEMIC optional_expression T_SEMIC optional_expression T_RP statement {For_loop($1,$4,$6,$8,$10)}
+          | T_CONTINUE  T_SEMIC  {Branch ("continue",None)}
+          | T_CONTINUE T_ID T_SEMIC  {Branch ("continue",Some $2)} 
+          | T_BREAK  T_SEMIC  {Branch ("break",None)}
+          | T_BREAK T_ID T_SEMIC {Branch ("break",Some $2)}
+          | T_RETURN  T_SEMIC {Return None}
+          | T_RETURN expression T_SEMIC {Return (Some $2)}
                      ;
         optional_t_id_t_colon:
-             {()}
-          |T_ID T_COLON {()}
+             {None}
+          |T_ID T_COLON {Some $1}
                      ;
 
         optional_expression:
-             {()}
-          |expression {()}
+             {None}
+          |expression {Some $1}
                      ;
         expression:
-            T_ID {()}
-          | T_LP expression T_RP  {()}
-          | T_TRUE {()}| T_FALSE {()} | T_NULL  {()}
-          | T_INT  {()}| T_CHAR {()} | T_DOUBLE  {()}| T_STRING  {()}
-          | T_ID T_LP T_RP  {()}
-          | T_ID T_LP expression_list T_RP {()}
-          | expression T_LSB expression T_RSB %prec POSTFIX {()}
-          | unary_operator expression %prec UNOP  {()}
-          | expression binary_operator expression %prec OPERATOR {()}
-          | expression T_COMMA expression %prec OPERATOR {()}
-          | unary_assignment expression %prec PREFIX {()}
-          | expression unary_assignment %prec POSTFIX  {()}
-          | expression binary_assignment expression %prec ASSIGNMENT {()}
-          | T_LP type_t T_RP expression %prec CASTING {()}
-          | expression T_QUES expression T_COLON expression %prec COMPIF  {()} 
-          | T_NEW type_t  {()}
-          | T_NEW basic_type star T_TIMES expression {()}
-          | T_NEW type_t T_LSB expression T_RSB %prec POSTFIX {()}
-          | T_DELETE expression {()}
+            T_ID {$1}
+          | T_LP expression T_RP  {Paren_expression $2}
+          | T_TRUE {"true"}| T_FALSE {"false"} | T_NULL  {"null"}
+          | T_INT  {$1}| T_CHAR {$1} | T_DOUBLE  {$1}| T_STRING  {$1}
+          | T_ID T_LP T_RP  {$1}
+          | T_ID T_LP expression_list T_RP {Function_call ($1,$3)}
+          | expression T_LSB expression T_RSB %prec POSTFIX {Array ($1,$3)}
+          | unary_operator expression %prec UNOP  {Unary_op ($1,$2)}
+          | expression binary_operator expression %prec OPERATOR {Binary_op ($1,$2,$3_}
+          | expression T_COMMA expression %prec OPERATOR {Binary_op ($1,",",$3)}
+          | unary_assignment expression %prec PREFIX {Prefix_unary_as ($1,$2)}
+          | expression unary_assignment %prec POSTFIX  {Postfix_unary_as($1,$2)}
+          | expression binary_assignment expression %prec ASSIGNMENT {Binary_as ($1,$2,$3)}
+          | T_LP type_t T_RP expression %prec CASTING {Casting ($2,$4)}
+          | expression T_QUES expression T_COLON expression %prec COMPIF  { Question ($1,$3,$5)}
+          | T_NEW type_t  {New_op ($2,None)}
+          | T_NEW basic_type star T_TIMES expression {Expression (New_op($2^$3,None),"*",$5)} /* Probably wrong */
+          | T_NEW type_t T_LSB expression T_RSB %prec POSTFIX {New_op ($2,$4)}
+          | T_DELETE expression {Delete_op $2}
         ;
 
 expression_list:
-	expression  %prec EXPLIST {()}
-        |expression_list T_COMMA expression  {()}
+	expression  %prec EXPLIST {[$1]}
+        |expression_list T_COMMA expression  {$1 @ [$3]}
 	;
 
 
 constant_expression:
-	expression {()}
+	expression {Constant_exp $1}
 	;
 
 unary_operator:
-	T_AMP  {()}| T_TIMES {()} | T_PLUS  {()}| T_MINUS  {()}| T_EX {()}
+	T_AMP  {"&"}| T_TIMES {"*"} | T_PLUS  {"+"}| T_MINUS  {"-"}| T_EX {"!"}
 	;
 
 binary_operator:
-	T_TIMES  {()}| T_DIV  {()}| T_MOD  {()}| T_PLUS  {()}| T_MINUS  {()}| T_BIG  {()}| T_SMALL  {()}| T_BEQ  {()}| T_SEQ  {()}| T_EQ  {()}| T_DIF  {()}| T_AND  {()}| T_OR  {()} /*| T_COMMA {()} removed because of shift/conflict*/
+	T_TIMES  {"*"}| T_DIV  {"/"}| T_MOD  {"%"}| T_PLUS  {"+"}| T_MINUS  {"-"}| T_BIG  {">"}| T_SMALL  {"<"}| T_BEQ  {">="}| T_SEQ  {"<="}| T_EQ  {"=="}| T_DIF  {"!="}| T_AND  {"&&"}| T_OR  {"||"} /*| T_COMMA {","} removed because of shift/conflict*/
 	;
 
 unary_assignment:
-	T_PP  {()}| T_MM {()}
+	T_PP  {"++"}| T_MM {"--"}
 	;
 
 binary_assignment:
-	T_ASS  {()}| T_TEQ  {()}| T_DEQ  {()}| T_MEQ  {()}| T_PEQ  {()}| T_MIEQ {()};
+	T_ASS  {"="}| T_TEQ  {"*="}| T_DEQ  {"/="}| T_MEQ  {"%="}| T_PEQ  {"+="}| T_MIEQ {"-="};

@@ -1,5 +1,5 @@
 type file = Program of program and 
-progam = Declarations of declaration list and
+program = Declarations of declaration list and
 declaration =  |Variable_dec of (type_t * declarator list)
                |Function_dec of (result_type * string * parameter list)
                |Function_def of (result_type * string * parameter list * declaration list * statement list) and

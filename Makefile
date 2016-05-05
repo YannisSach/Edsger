@@ -1,14 +1,23 @@
-all: lexer.mll parser.mly main.ml 
-	ocamllex lexer.mll       # generates lexer.ml
-	ocamlyacc -v parser.mly     # generates parser.ml and parser.mli
-	ocamlc -c parser.mli
-	ocamlc -c  lexer.ml
-	ocamlc -c parser.ml
-	ocamlc -c main.ml
-	ocamlc -o main lexer.cmo parser.cmo main.cmo
+FLAGS = -v
 
-sem: semantic.ml
-	ocamlopt -o semantic semantic.ml
+all: parser lexer compiler 
+	ocamlc -o compiler lexer.cmo parser.cmo main.cmo
+
+lexer: parser lexer.mll       # generates lexer.ml
+	ocamllex lexer.mll
+	ocamlc -c parser.mli
+	ocamlc -c lexer.ml
+
+parser: parser.mly semantic  # generates parser.ml and parser.mli
+	ocamlyacc $(FLAGS) parser.mly
+	ocamlc -c parser.ml
+
+compiler: parser semantic
+	ocamlc -c parser.mli
+	ocamlc -c main.ml
+
+semantic: semantic.ml 
+	ocamlc -c semantic.mli
 
 clean: 
-	$(RM) *.cmo *.cmx *.o *.cmi *.mli main parser.ml parser.output lexer.ml *.cmi semantic
+	$(RM) *.cmo *.cmx *.o *.cmi parser.mli compiler parser.ml parser.output lexer.ml *.cmi semantic

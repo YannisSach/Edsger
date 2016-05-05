@@ -61,7 +61,7 @@ rule edsger = parse
 						T_STRING(string)
                                          }
          | id
-                   { T_ID }
+                   { T_ID(id) }
         (* | op  		{T_OP} *)
 	 | '+'		{T_PLUS}
 	 | '-'		{T_MINUS}
