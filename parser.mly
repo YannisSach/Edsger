@@ -1,5 +1,5 @@
 %{
-Open Semantic
+open Semantic
 %}
 
 %token T_QUES
@@ -7,7 +7,7 @@ Open Semantic
 %token T_EOF
 %token T_PLUS T_MINUS T_TIMES T_DIV T_MOD
 %token <string>T_ID
-%token <int> T_INT
+%token <int > T_INT
 %token <float> T_DOUBLE
 %token <char> T_CHAR
 %token <string> T_STRING
@@ -70,12 +70,12 @@ Open Semantic
 
         %start start             /* the entry point */
 
-        %type <unit> start 
+        %type <Semantic.program> start 
         %%
-        start: program T_EOF {Program $1}
+        start: program T_EOF {$1}
 
         program:
-            program declaration {$1 @ [$2] } 
+            program declaration {$1 @ [$2]} 
             | declaration {[$1]}
                     ;
 
@@ -103,10 +103,10 @@ Open Semantic
                        ;
                        
         basic_type: 
-                    T_INTTYPE  {("int")}
-                    | T_CHARTYPE  {("char")}
-                    | T_BOOLTYPE  {("bool")} 
-                    | T_DOUBLETYPE {("double")}
+                    T_INTTYPE  {"int"}
+                    | T_CHARTYPE  {"char"}
+                    | T_BOOLTYPE  {"bool"} 
+                    | T_DOUBLETYPE {"double"}
                 ;
 
         declarator: 
@@ -139,7 +139,7 @@ Open Semantic
 
            parameters :
              {[]}
-             |T_COMMA parameter parameters {$2:$3}
+             |T_COMMA parameter parameters {$2::$3}
          ;
 
            parameter : 
@@ -166,8 +166,8 @@ Open Semantic
                    |statements statement {$1@[$2]}
                      ;
         statement: 
-          T_SEMIC{Expression None}
-          | expression T_SEMIC {Expression expression}
+          T_SEMIC{Simple_expression None}
+          | expression T_SEMIC {Simple_expression (Some $1)}
           | T_LB statements T_RB {Statements $2}
           | T_IF T_LP expression T_RP statement %prec IF_STMNT{If_stmt($3,$5)} 
           | T_IF T_LP expression T_RP statement T_ELSE statement {If_else_stmt($3,$5,$7)} 
@@ -189,15 +189,15 @@ Open Semantic
           |expression {Some $1}
                      ;
         expression:
-            T_ID {$1}
+            T_ID {Id $1}
           | T_LP expression T_RP  {Paren_expression $2}
-          | T_TRUE {"true"}| T_FALSE {"false"} | T_NULL  {"null"}
-          | T_INT  {$1}| T_CHAR {$1} | T_DOUBLE  {$1}| T_STRING  {$1}
-          | T_ID T_LP T_RP  {$1}
+          | T_TRUE {Bool true}| T_FALSE {Bool false} | T_NULL  {String "null"}
+          | T_INT  {Int $1}| T_CHAR {Char $1} | T_DOUBLE  {Double $1}| T_STRING  {String $1}
+          | T_ID T_LP T_RP  {Function_call ($1, [])}
           | T_ID T_LP expression_list T_RP {Function_call ($1,$3)}
           | expression T_LSB expression T_RSB %prec POSTFIX {Array ($1,$3)}
           | unary_operator expression %prec UNOP  {Unary_op ($1,$2)}
-          | expression binary_operator expression %prec OPERATOR {Binary_op ($1,$2,$3_}
+          | expression binary_operator expression %prec OPERATOR {Binary_op ($1,$2,$3)}
           | expression T_COMMA expression %prec OPERATOR {Binary_op ($1,",",$3)}
           | unary_assignment expression %prec PREFIX {Prefix_unary_as ($1,$2)}
           | expression unary_assignment %prec POSTFIX  {Postfix_unary_as($1,$2)}
@@ -205,8 +205,8 @@ Open Semantic
           | T_LP type_t T_RP expression %prec CASTING {Casting ($2,$4)}
           | expression T_QUES expression T_COLON expression %prec COMPIF  { Question ($1,$3,$5)}
           | T_NEW type_t  {New_op ($2,None)}
-          | T_NEW basic_type star T_TIMES expression {Expression (New_op($2^$3,None),"*",$5)} /* Probably wrong */
-          | T_NEW type_t T_LSB expression T_RSB %prec POSTFIX {New_op ($2,$4)}
+          | T_NEW basic_type star T_TIMES expression {Binary_op (New_op($2^$3,None),"*",$5)} /* Probably wrong */
+          | T_NEW type_t T_LSB expression T_RSB %prec POSTFIX {New_op ($2,Some $4)}
           | T_DELETE expression {Delete_op $2}
         ;
 

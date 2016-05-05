@@ -10,7 +10,9 @@ lexer: parser lexer.mll       # generates lexer.ml
 
 parser: parser.mly semantic  # generates parser.ml and parser.mli
 	ocamlyacc $(FLAGS) parser.mly
+	ocamlc -c parser.mli
 	ocamlc -c parser.ml
+
 
 compiler: parser semantic
 	ocamlc -c parser.mli
