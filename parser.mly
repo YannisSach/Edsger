@@ -206,8 +206,8 @@ open Semantic
           | expression T_QUES expression T_COLON expression %prec COMPIF  { Question ($1,$3,$5)}
           | T_NEW type_t  {New_op ($2,None)}
           | T_NEW basic_type star T_TIMES expression {Binary_op (New_op($2^$3,None),"*",$5)} /* Probably wrong */
-          | T_NEW type_t T_LSB expression T_RSB %prec POSTFIX {New_op ($2,Some $4)}
-          | T_DELETE expression {Delete_op $2}
+          | T_NEW type_t T_LSB expression T_RSB %prec POSTFIX {New_op, $2,Some $4}
+          | T_DELETE expression {Delete_op, $2}
         ;
 
 expression_list:
