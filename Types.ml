@@ -38,6 +38,21 @@ type program = declaration list and
                 |New_op of (string * type_t * expression option ) (* thelei apo mprosta to new gi auto kai evala to string *)
                 |Delete_op of (string * expression)  (* to idio *)
 
+(* final types of a var *)
+ type final_typ = 
+|Type_none
+|Type_int
+|Type_double
+|Type_char
+|Type_bool
+|Type_string
+|Type_array of final_typ * int
+
+(* tyre of a var *)
+type var_typ =
+| Final_type of final_typ
+| Pointer of var_typ * final_typ
+
 let program_tree = ref None
 
 

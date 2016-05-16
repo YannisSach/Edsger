@@ -43,5 +43,14 @@ and expression =
   | Question of (expression * expression * expression)
   | New_op of (string * type_t * expression option)
   | Delete_op of (string * expression)
+type final_typ =
+    Type_none
+  | Type_int
+  | Type_double
+  | Type_char
+  | Type_bool
+  | Type_string
+  | Type_array of final_typ * int
+type var_typ = Final_type of final_typ | Pointer of var_typ * final_typ
 val program_tree : program option ref
 val print_teliko : program option -> unit
