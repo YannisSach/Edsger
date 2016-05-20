@@ -60,8 +60,8 @@ rule edsger = parse
                                          {
 						T_STRING(string)
                                          }
-         | id
-                   { T_ID(id) }
+         | id as var
+                   {T_ID(var) }
         (* | op  		{T_OP} *)
 	 | '+'		{T_PLUS}
 	 | '-'		{T_MINUS}

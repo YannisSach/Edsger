@@ -1,5 +1,5 @@
 %{
-open Semantic
+open Ast
 %}
 
 %token T_QUES
@@ -70,9 +70,9 @@ open Semantic
 
         %start start             /* the entry point */
 
-        %type <Semantic.program> start 
+        %type <unit> start 
         %%
-        start: program T_EOF {$1}
+        start: program T_EOF {program_tree:= $1}
 
         program:
             program declaration {$1 @ [$2]} 
@@ -83,7 +83,7 @@ open Semantic
           variable_declaration  {$1}
           |function_declaration  {$1}
           |function_definition {$1}
-        ;                                                  ;
+        ;                                                  
 
         variable_declaration: 
           type_t declarators T_SEMIC {Variable_dec ($1,$2)}   
@@ -111,7 +111,7 @@ open Semantic
 
         declarator: 
           T_ID {Simple_declarator $1}
-          | T_ID T_LSB constant_expression T_RSB {Complex_declarator ($1,$3)}
+          | T_ID T_LSB constant_expression T_RSB {Complex_declarator ($1,Constant_exp $3)}
                 ;
         
         declarators:
