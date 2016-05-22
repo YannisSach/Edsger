@@ -4,7 +4,12 @@ open Symbol
 open Types
 open Identifier
 open Str
+(*open Symbtest*)
+
 exception Terminate
+
+
+let in_loop = ref 0	(* we set this var in order to know if we are in a loop because of break and continue *)
 
 (* to compile with Str we use str.cma in ocaml *)
 (*
@@ -47,44 +52,67 @@ and check_type ty = match ty with
 | "char" -> TYPE_char
 | _ -> TYPE_none
 
+and fun_is_forward entries = match entries with
+| [] -> ()
+| [t] -> ()
+| t :: rest ->
+fun_is_forward rest
+
 and  check_program t = match t with
 | None -> printf("empty");
-| Some tree -> check_declarations (tree)
+| Some tree -> initSymbolTable 256;
+ignore(openScope());
+check_declarations (tree); Symbtest.printSymbolTable();
+ignore(closeScope());
 
 and  check_declarations t = match t with
 | [] -> ()
-| x::rest -> check_declaration x
+| [x] -> check_declaration x
+| x::rest -> check_declaration x; 
+  check_declarations rest
 
 and check_declaration t = match t with
 | Variable_dec (ty, decs) ->
   check_declarators ty decs;
 | Function_dec (ty, name, params)->
   let t = ( newFunction (id_make name) true) in
+      printf("Fun dec\n");
+    (*  Symbtest.printSymbolTable(); 
+      printf("After fun dec\n");*)
       ignore(openScope());
+(*      Symbtest.printSymbolTable(); *)
       ignore(List.map (registerParams t) params);
       ignore(endFunctionHeader t (antistoixise_types_fun ty));
       ignore(forwardFunction t);
       closeScope();
 | Function_def (ty, name, params, decls, stms) ->
+  printf("Function definition");
   let t = ( Symbol.newFunction (id_make name) true) in (* t is fun entry (ty, t)=a, params *)
+(*      Symbtest.printSymbolTable(); *)
       ignore(openScope());
+(*      Symbtest.printSymbolTable();*)
       ignore(List.map (registerParams t) params);  
+(*      Symbtest.printSymbolTable();*)
       ignore(endFunctionHeader t (antistoixise_types_fun ty));
+(*    Symbtest.printSymbolTable();*)
       check_declarations decls;
+      Symbtest.printSymbolTable();
       check_statements stms;
+      Symbtest.printSymbolTable();
 (*      let info = t.entry_info in
       (match info with
       |ENTRY_function inf ->
       		  inf.entry_scope <- !currentScope
       | _ -> printf "error! Not a function :(" raise Terminate);*)
+      Symbtest.printSymbolTable();
       closeScope();
-
+      Symbtest.printSymbolTable();
 
 and check_declarators ty decs = match decs with
-| [] -> ()
+| [] ->printf("emppty"); ()
 | [dec] -> check_declarator ty dec
-| dec :: rest -> check_declarator ty dec;
-check_declarators ty decs
+| dec :: rest -> printf("2"); check_declarator ty dec;
+check_declarators ty rest
 
 (* if we have an array we must have an int expression and the type of the array *)
 and check_declarator ty dec = match dec with
