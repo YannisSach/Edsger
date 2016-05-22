@@ -1,8 +1,10 @@
 type typ = TYPE_none
          | TYPE_int
+         | TYPE_double
          | TYPE_byte
          | TYPE_char
-         | TYPE_pointer
+         | TYPE_bool
+         | TYPE_pointer of typ
          | TYPE_array of
              typ *
              int
@@ -12,7 +14,7 @@ let rec sizeOfType t =
    match t with
    | TYPE_int            -> 2
    | TYPE_char           -> 1
-   | TYPE_pointer        -> 1
+   | TYPE_pointer typ    -> 2
    | TYPE_byte           -> 1
    | TYPE_array (et, sz) -> sz * sizeOfType et
    | _                   -> 0

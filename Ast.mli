@@ -5,14 +5,14 @@ and declaration =
   | Function_def of
       (result_type * string * parameter list * declaration list *
        statement list)
-and type_t = string
+and type_t = Types.typ
 and declarator =
     Simple_declarator of string
   | Complex_declarator of (string * expression)
 and result_type = type_t
 and parameter =
-    By_val_param of (string * string)
-  | By_ref_param of (string * string)
+    By_val_param of (type_t * string)
+  | By_ref_param of (type_t * string)
 and statement =
     Simple_expression of expression option
   | Statements of statement list
@@ -43,7 +43,17 @@ and expression =
   | Question of (expression * expression * expression)
   | New_op of (type_t * expression option)
   | Delete_op of expression
-
-val program_tree : program ref
-
-val print_teliko : program -> unit
+type final_typ =
+    Type_none
+  | Type_int
+  | Type_double
+  | Type_char
+  | Type_bool
+  | Type_string
+  | Type_array of final_typ * int
+type var_typ = Final_type of final_typ | Pointer of var_typ * final_typ
+val program_tree : program option ref
+val print_program : Format.formatter -> 'a list -> unit
+val print_declaration : Format.formatter -> 'a -> unit
+val pretty_print : Format.formatter -> 'a list option -> unit
+val print_teliko : program option -> unit

@@ -1,7 +1,7 @@
 FLAGS = -v
 
 all: parser lexer compiler 
-	ocamlc -o compiler Ast.cmo Lexer.cmo Parser.cmo Main.cmo
+	ocamlc -o compiler Error.cmo Hashcons.cmo Identifier.cmo Types.cmo Symbol.cmo str.cma TypeInference.cmo Scopes.cmo Ast.cmo Lexer.cmo Parser.cmo Main.cmo
 
 lexer: parser Lexer.mll       # generates lexer.ml
 	ocamllex Lexer.mll
@@ -14,16 +14,24 @@ parser: Parser.mly ast  # generates parser.ml and parser.mli
 	ocamlc -c Parser.ml
 
 
-compiler: parser ast
+compiler: parser ast scopes
 	ocamlc -c Parser.mli
 	ocamlc -c Main.ml
 
-ast: Ast.mli Ast.ml
+
+symbtest : Symbtest.ml
+	ocamlc -i Symbtest.ml > Symbtest.mli
+	ocamlc -c Symbtest.mli
+	ocamlc -c Symbtest.ml
+
+scopes:  Scopes.ml symbol type_inference
+	ocamlc -i Scopes.ml > Scopes.mli	
+	ocamlc -c Scopes.mli
+	ocamlc -c Scopes.ml
+
+ast: Ast.mli Ast.ml types
 	ocamlc -c Ast.mli
 	ocamlc -c Ast.ml
-
-
-
 
 types: Types.mli Types.ml
 	ocamlc -c Types.mli
@@ -42,11 +50,9 @@ identifier: hashcons Identifier.ml Identifier.mli
 	ocamlc -c Identifier.ml
 
 
-symbol: identifier error Symbol.ml Symbol.mli
+symbol: identifier error types Symbol.ml Symbol.mli
 	ocamlc -c Symbol.mli
 	ocamlc -c Symbol.ml
-
-
 
 type_inference : TypeInference.ml symbol
 	ocamlc -c TypeInference.ml

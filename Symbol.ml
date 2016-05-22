@@ -106,7 +106,7 @@ let closeScope () =
   | Some scp ->
       currentScope := scp
   | None ->
-      internal "cannot close the outer scope!"
+      (*internal*) Printf.printf "cannot close the outer scope!"
 
 exception Failure_NewEntry of entry
 
@@ -220,7 +220,7 @@ let newParameter id typ mode f err =
                     H.add !tab id p;
                   p
               | _ ->
-                  internal "I found a parameter that is not a parameter!";
+                  (*internal*) Printf.printf "I found a parameter that is not a parameter!";
                   raise Exit
             end
           | [] ->
@@ -229,11 +229,11 @@ let newParameter id typ mode f err =
               raise Exit
         end
       | PARDEF_COMPLETE ->
-          internal "Cannot add a parameter to an already defined function";
+          (*internal*) Printf.printf "Cannot add a parameter to an already defined function";
           raise Exit
     end
   | _ ->
-      internal "Cannot add a parameter to a non-function";
+       (*internal*) Printf.printf "Cannot add a parameter to a non-function";
       raise Exit
 
 let newTemporary typ =
@@ -251,7 +251,7 @@ let forwardFunction e =
   | ENTRY_function inf ->
       inf.function_isForward <- true
   | _ ->
-      internal "Cannot make a non-function forward"
+       (*internal*) Printf.printf "Cannot make a non-function forward"
 
 let endFunctionHeader e typ =
   match e.entry_info with
@@ -259,7 +259,7 @@ let endFunctionHeader e typ =
       begin
         match inf.function_pstatus with
         | PARDEF_COMPLETE ->
-            internal "Cannot end parameters in an already defined function"
+             (*internal*) Printf.printf "Cannot end parameters in an already defined function"
         | PARDEF_DEFINE ->
             inf.function_result <- typ;
             let offset = ref start_positive_offset in
@@ -273,7 +273,7 @@ let endFunctionHeader e typ =
                     | PASS_BY_REFERENCE -> 2 in
                   offset := !offset + size
               | _ ->
-                  internal "Cannot fix offset to a non parameter" in
+                   (*internal*) Printf.printf "Cannot fix offset to a non parameter" in
             List.iter fix_offset inf.function_paramlist;
             inf.function_paramlist <- List.rev inf.function_paramlist
         | PARDEF_CHECK ->
@@ -286,4 +286,4 @@ let endFunctionHeader e typ =
       end;
       inf.function_pstatus <- PARDEF_COMPLETE
   | _ ->
-      internal "Cannot end parameters in a non-function"
+       (*internal*) Printf.printf "Cannot end parameters in a non-function"

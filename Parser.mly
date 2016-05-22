@@ -1,5 +1,27 @@
 %{
 open Ast
+open Types
+open Str
+
+let rec antistoixise_types_fun t =
+    let r  = Str.regexp "\\(char\\|int\\|bool\\|double\\|void\\)\\(\\**\\)" in
+    	let tipos = Str.replace_first r "\\1" t 
+	and point = Str.replace_first r "\\2" t in
+	    check_pointer tipos point;
+
+and check_pointer ty poin = match String.length (poin) with
+| 0 -> (check_type ty);
+| 1 -> TYPE_pointer (check_type ty)
+| _ -> TYPE_pointer (check_pointer ty (String.sub poin 1 ((String.length poin)-1)))
+
+and check_type ty = match ty with
+| "void" -> TYPE_proc
+| "int" -> TYPE_int
+| "double" -> TYPE_double
+| "bool" -> TYPE_bool
+| "char" -> TYPE_char
+| _ -> TYPE_none
+
 %}
 
 %token T_QUES
@@ -72,7 +94,7 @@ open Ast
 
         %type <unit> start 
         %%
-        start: program T_EOF {program_tree:= $1}
+        start: program T_EOF {program_tree:= Some $1}
 
         program:
             program declaration {$1 @ [$2]} 
@@ -95,7 +117,7 @@ open Ast
                       ;
                         */
        type_t:
-        basic_type star %prec TIMES{$1^$2}
+        basic_type star %prec TIMES{ antistoixise_types_fun ( $1^$2) }
                       ;
        star:
              {""}
@@ -122,8 +144,8 @@ open Ast
         function_declaration:
          type_t T_ID T_LP T_RP T_SEMIC {Function_dec ($1,$2,[])} 
          |type_t T_ID T_LP parameter_list T_RP T_SEMIC {Function_dec($1,$2,$4)}
-         |T_VOID T_ID T_LP T_RP T_SEMIC {Function_dec("void",$2,[])} 
-         |T_VOID T_ID T_LP parameter_list T_RP T_SEMIC {Function_dec("void",$2,$4)}
+         |T_VOID T_ID T_LP T_RP T_SEMIC {Function_dec(TYPE_proc,$2,[])} 
+         |T_VOID T_ID T_LP parameter_list T_RP T_SEMIC {Function_dec(TYPE_proc,$2,$4)}
                 
         ;
 
@@ -151,8 +173,8 @@ open Ast
                          type_t T_ID T_LP T_RP T_LB declarations statements T_RB {Function_def($1,$2,[],$6,$7)}
                          |  type_t T_ID T_LP parameter_list T_RP T_LB declarations statements T_RB {Function_def($1,$2,$4,$7,$8)}
 
-                         |T_VOID T_ID T_LP T_RP T_LB declarations statements T_RB {Function_def("void",$2,[],$6,$7)}
-                         |T_VOID T_ID T_LP parameter_list T_RP T_LB declarations statements T_RB {Function_def("void",$2,$4,$7,$8)}
+                         |T_VOID T_ID T_LP T_RP T_LB declarations statements T_RB {Function_def(TYPE_proc,$2,[],$6,$7)}
+                         |T_VOID T_ID T_LP parameter_list T_RP T_LB declarations statements T_RB {Function_def(TYPE_proc,$2,$4,$7,$8)}
                      ;
                        
         declarations:
@@ -205,7 +227,7 @@ open Ast
           | T_LP type_t T_RP expression %prec CASTING {Casting ($2,$4)}
           | expression T_QUES expression T_COLON expression %prec COMPIF  { Question ($1,$3,$5)}
           | T_NEW type_t  {New_op ($2,None)}
-          | T_NEW basic_type star T_TIMES expression {Binary_op (New_op($2^$3,None),"*",$5)} /* Probably wrong */
+          | T_NEW basic_type star T_TIMES expression {Binary_op (New_op(antistoixise_types_fun ($2^$3),None),"*",$5)} /* Probably wrong */
           | T_NEW type_t T_LSB expression T_RSB %prec POSTFIX {New_op ($2,Some $4)}
           | T_DELETE expression {Delete_op $2}
         ;
