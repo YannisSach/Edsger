@@ -25,7 +25,7 @@ let rec findType exp =
      let actual_param_types = List.map findType exps in
      let suffix = create_suffix actual_param_types in
      let fun_name = String.concat "" [name;"_" ;suffix] in
-     let _ = Printf.printf "looking for %s" fun_name in
+     (* let _ = Printf.printf "looking for %s" fun_name in *)
      let e = lookupEntry (id_make fun_name) LOOKUP_ALL_SCOPES true in 
      (match e.entry_info with
         ENTRY_function function_info -> (

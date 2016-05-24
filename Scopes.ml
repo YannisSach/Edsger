@@ -29,7 +29,7 @@ and check_declaration t = match t with
   | Function_dec (ty, name, params)->
      let suffix = add_suffix params in
      let fun_name = String.concat "" [name;"_"; suffix] in
-     let _ = Printf.printf "adding fun dec %s" fun_name in
+     (* let _ = Printf.printf "adding fun dec %s" fun_name in *)
      let t = ( newFunction (id_make fun_name) true) in
      openScope(ty);
      ignore (List.map (registerParams t) params);
@@ -39,7 +39,7 @@ and check_declaration t = match t with
   | Function_def (ty, name, params, decls, stms) ->
      let suffix = add_suffix params in
      let fun_name = String.concat "" [name; suffix] in
-     let _  = Printf.printf "adding %s" fun_name in
+     (* let _  = Printf.printf "adding %s" fun_name in *)
      let t = ( Symbol.newFunction (id_make fun_name) true) in (* t is fun entry (ty, t)=a, params *)
      ignore(openScope(ty));
      ignore(List.map (registerParams t) params);  
