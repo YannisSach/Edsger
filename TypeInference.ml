@@ -11,24 +11,50 @@ let rec findType exp =
     Id name -> let e = lookupEntry (id_make name) LOOKUP_ALL_SCOPES true in
                (match e.entry_info with
                   ENTRY_variable variable_info ->  variable_info.variable_type
-                | _ -> raise (Type_error "This is not a variable")
-                             )
+                | ENTRY_parameter parameter_info -> parameter_info.parameter_type
+                | _ -> let _ = Error.error "%s:this is not a variable" name in TYPE_none
+               )
 
   | Int int -> TYPE_int
-  | Double double -> TYPE_double (*We should add it to Types*)
-  | Char char -> TYPE_char (*Same with this one*)
-  | String str -> TYPE_none
+  | Double double -> TYPE_double
+  | Char char -> TYPE_char
+  | String str -> TYPE_array (TYPE_char,0)
   | Bool bool -> TYPE_bool (* ... *)
   | Constant_exp exp -> findType exp
-  | Function_call (name, exps)->
-     let _ = List.map findType exps in
-     let e = lookupEntry (id_make name) LOOKUP_ALL_SCOPES true in 
+  | Function_call (name, exps) ->
+     let actual_param_types = List.map findType exps in
+     let suffix = create_suffix actual_param_types in
+     let fun_name = String.concat "" [name;"_" ;suffix] in
+     let _ = Printf.printf "looking for %s" fun_name in
+     let e = lookupEntry (id_make fun_name) LOOKUP_ALL_SCOPES true in 
      (match e.entry_info with
-        ENTRY_function function_info -> function_info.function_result
+        ENTRY_function function_info -> (
+        let typical_param_types = List.map (function x -> match x.entry_info with ENTRY_parameter a -> a.parameter_type | _ -> Error.error "No reason to be here"; TYPE_none) function_info.function_paramlist in
+        (try 
+         let result = List.map2 equalType actual_param_types typical_param_types in
+         let correct = List.fold_left (&&)  true  result in
+         if correct then function_info.function_result else (Error.error "fun %s: Mismatch between actual and typical params" name; TYPE_none)
+        with Invalid_argument _ ->
+          Error.error "call of %s function has different length of params" name;
+          TYPE_none
+        )
+       )
       | _ -> raise (Type_error "This function has no result")
      )
-  | Array (e1, e2) -> let ty = findType e1 in
-                      TYPE_array (ty,0)
+  | Array (e1, e2) -> let t1 = findType e1 in
+                      let t2 = findType e2 in
+                      if (equalType t2 TYPE_int) then
+                        (match t1 with 
+                         | TYPE_array (ty,_) -> ty
+                         | TYPE_pointer x -> x
+                         | _ -> (Error.error "This is neither a pointer nor an array"; TYPE_none)
+                        )
+                      else 
+                        (Error.error "Left expression in array form does not evaluate to integer type";
+                        TYPE_none
+                        )
+
+
   | Unary_op (op,e) -> (match op with
                           "&" -> TYPE_pointer (findType e)
                         | "*" -> let ty = (findType e) in
@@ -51,10 +77,12 @@ let rec findType exp =
                                            | TYPE_double, TYPE_double 
                                              | TYPE_pointer _, TYPE_int -> t1
 
-                                           | _,_ ->raise (Type_error "Invalid arguments for binary operator"))
+                                           | _,_ -> Error.error "%s: Invalid arguments for binary operator" op ; TYPE_none
+                                          )
                               | "%" -> (match t1, t2 with
                                           TYPE_int, TYPE_int -> t1
-                                        | _, _ -> raise (Type_error "Invalid arguments for binary operator"))
+                                        | _, _ -> Error.error "%s: Invalid arguments for binary operator" op ; TYPE_none
+                                       )
                               | "=="
                                 | "!=" ->  if (equalType t1 t2 ) then TYPE_bool else raise (Type_error"Invalid arguments in comparison")
                               |"<"
@@ -135,13 +163,18 @@ let rec findType exp =
     )
   |Paren_expression e -> findType e
 
-                                                
-      
-                                                        
+and convert_type_to_char t =
+  match t with
+  | TYPE_int -> "i"
+  | TYPE_double -> "d"
+  | TYPE_array (t,_) -> String.concat "" ["a"; (convert_type_to_char t)]
+  | TYPE_bool -> "b"
+  | TYPE_pointer x -> String.concat "" ["p" ;(convert_type_to_char x)]
+  | _ -> ""
 
-
-       
-
+and create_suffix type_list = 
+  let suffix = List.map (fun x -> convert_type_to_char x) type_list in 
+  String.concat "" suffix 
 
 
      

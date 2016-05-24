@@ -1,4 +1,11 @@
-int main(){
-    int a;
-    a = b;
+//void foo(char a);
+void foo(int a);
+
+void main(){
+        int a;
+  	foo(a);
+    	return;
 }
+
+
+	

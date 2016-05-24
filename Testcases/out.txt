@@ -1,0 +1,81 @@
+
+*** Pretty Printing AST ***
+***************************
+Function_decvoidwriteInteger(By_val_param int n )
+
+
+Function_decvoidwriteBoolean(By_val_param boolean b )
+
+
+Function_decvoidwriteChar(By_val_param char c )
+
+
+Function_decvoidwriteReal(By_val_param double d )
+
+
+Function_decvoidwriteString(By_val_param pointer char s )
+
+
+Function_decintreadInteger()
+
+
+Function_decbooleanreadBoolean()
+
+
+Function_deccharreadChar()
+
+
+Function_decdoublereadReal()
+
+
+Function_decvoidreadString(By_val_param int size , By_val_param pointer char s )
+
+
+Function_defint  main()
+{
+  val  Variable_dec( intSimple_declarator numberOfRings)
+  
+
+Function_defvoid  hanoi(By_val_param pointer char source , By_val_param pointer char target , By_val_param pointer char auxiliary , By_val_param int rings )
+{
+  val  Function_defvoid  move(By_val_param pointer char source , By_val_param pointer char target )
+  {
+    val  empty
+
+    stmts 
+
+     writeString (String "Move from " );
+    
+     writeString (Id source );
+    
+     writeString (String " to " );
+    
+     writeString (Id target );
+    
+     writeString (String ".\n" );
+  } telos synartysis
+  stmts 
+If_stmt (Id rings >= Int 1) then 
+  
+   hanoi (Id source , Id auxiliary , Id target , Id rings );
+  
+   move (Id source , Id target );
+  
+   hanoi (Id auxiliary , Id target , Id source , Id rings - Int 1 );
+} telos synartysis
+stmts 
+Branch break
+
+ writeString (String "Please, give the number of rings: " );
+
+Id numberOfRings =  readInteger ( );
+
+ writeString (String "\nHere is the solution:\n\n" );
+
+ hanoi (String "left'" , String "right" , String "middle" , Id numberOfRings );
+return Int 0;
+
+} telos synartysis
+scope: hanoi(source : pointer; target : pointer; auxiliary : pointer; rings : int) : proc, numberOfRings[-2]
+scope: main() : int, readString(size : int; s : pointer) : proc, readReal() : double, readChar() : char, readBoolean() : bool, readInteger() : int, writeString(s : pointer) : proc, writeReal(d : double) : proc, writeChar(c : char) : proc, writeBoolean(b : bool) : proc, writeInteger(n : int) : proc
+----------------------------------------

@@ -94,7 +94,10 @@ and check_type ty = match ty with
 
         %type <unit> start 
         %%
-        start: program T_EOF {program_tree:= Some $1}
+        start: program T_EOF {let t = !program_tree in
+                              match t with
+                              |None -> program_tree:= Some $1
+                              |Some p -> program_tree:= Some (p @ $1)}
 
         program:
             program declaration {$1 @ [$2]} 

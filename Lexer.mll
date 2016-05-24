@@ -1,22 +1,23 @@
 (* scanner for Edsger *)
 {
   open Printf
-  open Queue
+  open Set
   open Lexing
   open Parser
   exception Eof
 (*this is a stack containing a Lexing.lexbuf and the name of the header file*)
-  let file_set = Queue.create ()
-  let file_queue  = Queue.create()
-  let not_in_queue file queue =  
-  let rec find_element file queue =
-         if (Queue.is_empty queue) then true
-         else
-           let (_,name) = Queue.pop queue
-           in if (compare file name) == 0 then false
-              else find_element file queue
-  and queue' = Queue.copy file_queue
-      in find_element file queue' 
+  module SS = Set.Make(String)
+  let file_set = SS.empty
+ 
+  (* let not_in_queue file queue =   *)
+  (* let rec find_element file queue = *)
+  (*        if (Queue.is_empty queue) then true *)
+  (*        else *)
+  (*          let (_,name) = Queue.pop queue *)
+  (*          in if (compare file name) == 0 then false *)
+  (*             else find_element file queue *)
+  (* and queue' = Queue.copy file_queue *)
+  (*     in find_element file queue'  *)
 
 }
 
@@ -107,12 +108,12 @@ rule edsger = parse
                                        {
                                          let len = (String.length include_rule)- 10 -1
                                          in let file = String.sub include_rule 10 len
-                                                in if (not_in_queue file file_set)
-                                                   then 
-                                                     ( let lexbuf' = Lexing.from_channel (open_in file)
-                                                       in Queue.push (lexbuf', file) file_queue ; 
-                                                          Queue.push file file_set;
-                                                          edsger lexbuf
+                                                in if (not (SS.mem file file_set) )
+                                                   then(
+                                                     let _ = SS.add file file_set in
+                                                     let lexbuf' = Lexing.from_channel (open_in file) in 
+                                                     let _ = Parser.start edsger lexbuf' in
+                                                     edsger lexbuf
                                                      )
                                                    else 
                                                      (Printf.printf "Include file: %s is already in parsing queue!\n" file; edsger lexbuf) (* A cycle just broken *)

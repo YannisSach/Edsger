@@ -22,6 +22,7 @@ type param_status = PARDEF_COMPLETE | PARDEF_DEFINE | PARDEF_CHECK
 type scope = {
   sco_parent : scope option;
   sco_nesting : int;
+  sco_type : Types.typ;
   mutable sco_entries : entry list;
   mutable sco_negofs : int;
 }
@@ -61,7 +62,7 @@ val quadNext : int ref
 val tempNumber : int ref
 val tab : entry H.t ref
 val initSymbolTable : int -> unit
-val openScope : unit -> unit
+val openScope : Types.typ -> unit
 val closeScope : unit -> unit
 exception Failure_NewEntry of entry
 val newEntry : H.key -> entry_info -> bool -> entry
