@@ -1,9 +1,9 @@
-//void foo(char a);
-void foo(int a);
 
 void main(){
-        int a;
-  	foo(a);
+        int a[20];
+	int b[20];
+	a = b;
+  	
     	return;
 }
 

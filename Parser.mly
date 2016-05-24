@@ -65,12 +65,14 @@ and check_type ty = match ty with
 %token T_RB T_LB
         
 /*--------------------------ORDER---------------------------*/
-        %nonassoc EXPLIST /*Na to ksanadoume ayto*/
+     /* Edw itan to EXPLIST */
+
       /*DANGLING IF */
         %nonassoc IF_STMNT
         %nonassoc T_ELSE 
       /* ------------*/
         %left T_COMMA 
+        %nonassoc EXPLIST /*Na to ksanadoume ayto*/
         %nonassoc TIMES /*for type_t shift/reduce conflict */
         %right T_ASS T_PEQ T_MIEQ T_TEQ T_DEQ T_MEQ
         %nonassoc T_QUES
@@ -237,7 +239,7 @@ and check_type ty = match ty with
 
 expression_list:
 	expression  %prec EXPLIST {[$1]}
-        |expression_list T_COMMA expression  {$1 @ [$3]}
+        |expression_list T_COMMA expression %prec EXPLIST  {$1 @ [$3]} /* to allaxa twra */
 	;
 
 

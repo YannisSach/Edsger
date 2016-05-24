@@ -39,6 +39,12 @@ Function_defvoid  bsort(By_val_param pointer int x , By_val_param int n )
 Variable_dec( booleanSimple_declarator changed)
 
 
+Variable_dec( intComplex_declarator a  Int 20)
+
+
+Variable_dec( pointer charSimple_declarator s)
+
+
 Function_defvoid  swap(By_ref_param int x , By_ref_param int y )
 {
   val  Variable_dec( intSimple_declarator t)
@@ -54,7 +60,9 @@ Function_defvoid  swap(By_ref_param int x , By_ref_param int y )
 stmts 
 for (Id changed = Bool true, Id changed, for (Id i = Int 0 , Id changed = Bool false, Id i < Id n - Int 1, Id i ++ , If_stmt (Id x[Id i] > Id x[Id i + Int 1]) then 
 
- swap (Id x[Id i] , Id x[Id i + Int 1] );
+ readString (Id x[Int 1], Id s );
+
+ swap (Id x[Id i], Id a[Id i + Int 1] );
 
 Id changed = Bool true
 } telos synartysis
@@ -83,11 +91,11 @@ stmts
 for (Id i = Int 0 , Id seed = Int 65, Id i < Int 16, Id i ++ , 
 Id x[Id i] = Id seed = (Id seed * Int 137 + Int 221 + Id i) % Int 101
 
- printArray (String "Initial array: " , Id x , Int 16 );
+ printArray (String "Initial array: ", Id x, Int 16 );
 
- bsort (Id x , Int 16 );
+ bsort (Id x, Int 16 );
 
- printArray (String "Sorted array: " , Id x , Int 16 );
+ printArray (String "Sorted array: ", Id x, Int 16 );
 } telos synartysis
 adding fun dec writeInteger_i
 adding fun dec writeBoolean_b
@@ -101,5 +109,23 @@ adding fun dec readReal_
 adding fun dec readString_ipc
 adding bsort_pii
 adding swap_ii
-Length of params swap:1
-looking for swap_i
+Length of params readString:2
+looking for readString_ipc
+Length of params swap:2
+looking for swap_ii
+adding main_
+adding printArray_pcpii
+Length of params writeString:1
+looking for writeString_pc
+Length of params writeString:1
+looking for writeString_pc
+Length of params writeInteger:1
+looking for writeInteger_i
+Length of params writeString:1
+looking for writeString_pc
+Length of params printArray:3
+looking for printArray_pcpii
+Length of params bsort:2
+looking for bsort_pii
+Length of params printArray:3
+looking for printArray_pcpii

@@ -4,7 +4,8 @@ void bsort (int * x, int n)
 {
 	int i;
 	bool changed;
-
+	int a[20];
+	char* s;
 	void swap (byref int x, byref int y)
 	{
 		int t;
@@ -17,7 +18,8 @@ void bsort (int * x, int n)
 	for (changed = true; changed;)
 		for (i = 0, changed = false; i < n-1; i++)
 			if (x[i] > x[i+1]) {
-				swap(x[i], x[i+1]);
+				readString (x[1], s);
+				swap(x[i], a[i+1]);
 				changed = true;
 			}
 }

@@ -18,11 +18,12 @@ let rec findType exp =
   | Int int -> TYPE_int
   | Double double -> TYPE_double
   | Char char -> TYPE_char
-  | String str -> TYPE_pointer TYPE_char (*Array (TYPE_pointer *)
+  | String str -> TYPE_array (TYPE_char,0) (*Array (TYPE_pointer *)
   | Bool bool -> TYPE_bool (* ... *)
   | Constant_exp exp -> findType exp
   | Function_call (name, exps) ->
-     let actual_param_types = List.map findType exps in
+     let param_types = List.map findType exps in
+     let actual_param_types = List.map convert_to_typical_types param_types in
      let _ = Printf.printf "Length of params %s:%d\n" name (List.length exps) in
      let suffix = create_suffix actual_param_types in
      let fun_name = String.concat "" [name;"_" ;suffix] in
@@ -121,9 +122,13 @@ let rec findType exp =
     )
   |Binary_as (e1, op, e2) ->
     let t1 = findType e1 in 
-    let t2 = findType e2 in 
+    (match t1 with
+    |TYPE_array (_,_) -> (Error.error "%s: Cannot assign value to array" op; TYPE_none)
+    | _ ->
+    (let t2 = findType e2 in 
+
     (match op with 
-       "=" -> if ( equalType t1 t2 ) then t1 else raise (Type_error "Binary assignment wrong types")
+       "=" -> if ( equalType t1 t2 ) then t1 else (Error.error "%s: Binary assignement wrong operands" op; TYPE_none)
      | "*=" 
        | "/=" -> 
         (match t1,t2 with 
@@ -146,6 +151,9 @@ let rec findType exp =
         )
        | _ -> raise (Type_error "Wrong operator in binary assignement")
     )
+
+    )
+    )
   |Casting (t1, e1) -> let _ = findType e1 in t1
   |Question (e1,e2,e3) -> let t1 = findType e1 in
                           let t2 = findType e2 in
@@ -163,6 +171,11 @@ let rec findType exp =
      | _ -> raise (Type_error "Wrong wrong arguments in delete")
     )
   |Paren_expression e -> findType e
+
+and convert_to_typical_types t = 
+  match t with 
+  | TYPE_array (t,_) -> TYPE_pointer t
+  | _ -> t 
 
 and convert_type_to_char t =
   match t with

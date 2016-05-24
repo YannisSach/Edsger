@@ -130,7 +130,7 @@ and check_fun_type scope_typ typ =
       raise Terminate )
 
 and check_main () = 
-  let main = lookupEntry (id_make "main") LOOKUP_CURRENT_SCOPE true in 
+  let main = lookupEntry (id_make "main_") LOOKUP_CURRENT_SCOPE true in 
   match main.entry_info with
   | ENTRY_function _ -> ()
   | _ -> Error.error "Couldn't find main function :("
