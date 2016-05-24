@@ -29,7 +29,7 @@ and check_declaration t = match t with
   | Function_dec (ty, name, params)->
      let suffix = add_suffix params in
      let fun_name = String.concat "" [name;"_"; suffix] in
-     (* let _ = Printf.printf "adding fun dec %s" fun_name in *)
+     let _ = Printf.printf "adding fun dec %s\n" fun_name in
      let t = ( newFunction (id_make fun_name) true) in
      openScope(ty);
      ignore (List.map (registerParams t) params);
@@ -38,8 +38,8 @@ and check_declaration t = match t with
      closeScope();
   | Function_def (ty, name, params, decls, stms) ->
      let suffix = add_suffix params in
-     let fun_name = String.concat "" [name; suffix] in
-     (* let _  = Printf.printf "adding %s" fun_name in *)
+     let fun_name = String.concat "" [name;"_"; suffix] in
+     let _  = Printf.printf "adding %s\n" fun_name in
      let t = ( Symbol.newFunction (id_make fun_name) true) in (* t is fun entry (ty, t)=a, params *)
      ignore(openScope(ty));
      ignore(List.map (registerParams t) params);  
@@ -138,7 +138,7 @@ and check_main () =
 (* Or simply add new function main and try to catch an exception? *)
 
 and add_suffix param_list = 
-  let suffix = List.map (fun x -> match x with |By_val_param (t,_) -> TypeInference.convert_type_to_char t | By_ref_param (t,_) -> TypeInference.convert_type_to_char t) param_list in String.concat "" suffix 
+  let suffix = List.map (fun x -> match x with | By_val_param (t,_) -> TypeInference.convert_type_to_char t | By_ref_param (t,_) -> TypeInference.convert_type_to_char t) param_list in String.concat "" suffix 
 
   
 

@@ -18,14 +18,15 @@ let rec findType exp =
   | Int int -> TYPE_int
   | Double double -> TYPE_double
   | Char char -> TYPE_char
-  | String str -> TYPE_array (TYPE_char,0)
+  | String str -> TYPE_pointer TYPE_char (*Array (TYPE_pointer *)
   | Bool bool -> TYPE_bool (* ... *)
   | Constant_exp exp -> findType exp
   | Function_call (name, exps) ->
      let actual_param_types = List.map findType exps in
+     let _ = Printf.printf "Length of params %s:%d\n" name (List.length exps) in
      let suffix = create_suffix actual_param_types in
      let fun_name = String.concat "" [name;"_" ;suffix] in
-     (* let _ = Printf.printf "looking for %s" fun_name in *)
+     let _ = Printf.printf "looking for %s\n" fun_name in
      let e = lookupEntry (id_make fun_name) LOOKUP_ALL_SCOPES true in 
      (match e.entry_info with
         ENTRY_function function_info -> (
@@ -168,6 +169,7 @@ and convert_type_to_char t =
   | TYPE_int -> "i"
   | TYPE_double -> "d"
   | TYPE_array (t,_) -> String.concat "" ["a"; (convert_type_to_char t)]
+  | TYPE_char -> "c"
   | TYPE_bool -> "b"
   | TYPE_pointer x -> String.concat "" ["p" ;(convert_type_to_char x)]
   | _ -> ""

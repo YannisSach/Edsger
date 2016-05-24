@@ -99,7 +99,6 @@ adding fun dec readBoolean_
 adding fun dec readChar_
 adding fun dec readReal_
 adding fun dec readString_ipc
-adding bsort_pii
-adding swap_ii
-Length of params swap:1
+adding bsortpii
+adding swapii
 looking for swap_i
