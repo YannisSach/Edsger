@@ -31,71 +31,31 @@ Function_decdoublereadReal()
 Function_decvoidreadString(By_val_param int size , By_val_param pointer char s )
 
 
-Function_defvoid  bsort(By_val_param pointer int x , By_val_param int n )
-{
-  val  Variable_dec( intSimple_declarator i)
-  
-
-Variable_dec( booleanSimple_declarator changed)
-
-
-Variable_dec( intComplex_declarator a  Int 20)
-
-
-Variable_dec( pointer charSimple_declarator s)
-
-
-Function_defvoid  swap(By_ref_param int x , By_ref_param int y )
-{
-  val  Variable_dec( intSimple_declarator t)
-  
-  stmts 
-
-  Id t = Id x
-  
-  Id x = Id y
-  
-  Id y = Id t
-} telos synartysis
-stmts 
-for (Id changed = Bool true, Id changed, for (Id i = Int 0 , Id changed = Bool false, Id i < Id n - Int 1, Id i ++ , If_stmt (Id x[Id i] > Id x[Id i + Int 1]) then 
-
- readString (Id x[Int 1], Id s );
-
- swap (Id x[Id i], Id a[Id i + Int 1] );
-
-Id changed = Bool true
-} telos synartysis
-
 Function_defvoid  main()
 {
-  val  Function_defvoid  printArray(By_val_param pointer char msg , By_val_param pointer int x , By_val_param int n )
-  {
-    val  Variable_dec( intSimple_declarator i)
-    
-    stmts 
+  val  Variable_dec( intSimple_declarator n, Simple_declarator k, Simple_declarator i, Simple_declarator seed)
+  
 
-     writeString (Id msg );
-    for (Id i = Int 0, Id i < Id n, Id i ++ , 
-    If_stmt (Id i > Int 0) then 
-     writeString (String ", " );
-    
-     writeInteger (Id x[Id i] );
-    
-     writeString (String "\n" );
-  } telos synartysis
-
-Variable_dec( intSimple_declarator i, Complex_declarator x  Int 16, Simple_declarator seed)
+Variable_dec( doubleSimple_declarator sum)
 
 stmts 
-for (Id i = Int 0 , Id seed = Int 65, Id i < Int 16, Id i ++ , 
-Id x[Id i] = Id seed = (Id seed * Int 137 + Int 221 + Id i) % Int 101
 
- printArray (String "Initial array: ", Id x, Int 16 );
+ writeString (String "Give n: " );
 
- bsort (Id x, Int 16 );
+Id n =  readInteger ( );
 
- printArray (String "Sorted array: ", Id x, Int 16 );
+ writeString (String "Give k: " );
+
+Id k =  readInteger ( );
+for (Id i = Int 0 , Id sum = Double 0.000000 , Id seed = Int 65, Id i < Id k, Id i ++ , 
+Id sum += Casting double(Id seed = (Id seed * Int 137 + Int 221 + Id i) % Id n)
+If_stmt (Id k > Int 0) then 
+
+ writeString (String "Mean: " );
+
+ writeReal (Id sum / Casting doubleId k );
+
+ writeString (String "\n" );
 } telos synartysis
 adding fun dec writeInteger_i
 adding fun dec writeBoolean_b
@@ -107,25 +67,11 @@ adding fun dec readBoolean_
 adding fun dec readChar_
 adding fun dec readReal_
 adding fun dec readString_ipc
-adding bsort_pii
-adding swap_ii
-Length of params readString:2
-looking for readString_ipc
-Length of params swap:2
-looking for swap_ii
 adding main_
-adding printArray_pcpii
 Length of params writeString:1
-looking for writeString_pc
+Length of params readInteger:0
 Length of params writeString:1
-looking for writeString_pc
-Length of params writeInteger:1
-looking for writeInteger_i
+Length of params readInteger:0
 Length of params writeString:1
-looking for writeString_pc
-Length of params printArray:3
-looking for printArray_pcpii
-Length of params bsort:2
-looking for bsort_pii
-Length of params printArray:3
-looking for printArray_pcpii
+Length of params writeReal:1
+Length of params writeString:1
