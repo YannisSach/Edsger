@@ -27,9 +27,10 @@ and check_declaration t = match t with
   | Variable_dec (ty, decs) ->
      check_declarators ty decs;
   | Function_dec (ty, name, params)->
-     let suffix = add_suffix params in
-     let fun_name = String.concat "" [name;"_"; suffix] in
-     let _ = Printf.printf "adding fun dec %s\n" fun_name in
+     let fun_name = name in (* stopping support of same name functions *)
+     (* let suffix = add_suffix params in *)
+     (* let fun_name = String.concat "" [name;"_"; suffix] in *)
+     (* let _ = Printf.printf "adding fun dec %s\n" fun_name in *)
      let t = ( newFunction (id_make fun_name) true) in
      openScope(ty);
      ignore (List.map (registerParams t) params);
@@ -37,9 +38,10 @@ and check_declaration t = match t with
      ignore (forwardFunction t);
      closeScope();
   | Function_def (ty, name, params, decls, stms) ->
-     let suffix = add_suffix params in
-     let fun_name = String.concat "" [name;"_"; suffix] in
-     let _  = Printf.printf "adding %s\n" fun_name in
+     let fun_name = name in (* stopping support of same name functions *)
+     (* let suffix = add_suffix params in *)
+     (* let fun_name = String.concat "" [name;"_"; suffix] in *)
+     (* let _  = Printf.printf "adding %s\n" fun_name in *)
      let t = ( Symbol.newFunction (id_make fun_name) true) in (* t is fun entry (ty, t)=a, params *)
      ignore(openScope(ty));
      ignore(List.map (registerParams t) params);  
@@ -120,7 +122,7 @@ and check_statement stm =
 	     check_fun_type (typos) (TYPE_proc))
       | Some expr ->
          ignore (check_fun_type (!currentScope.sco_type) (findType expr)));
-     ignore(Symbtest.printSymbolTable());   
+     (* ignore(Symbtest.printSymbolTable());    *)
 
 and check_fun_type scope_typ typ = 
   if (equalType scope_typ typ) then
@@ -130,7 +132,7 @@ and check_fun_type scope_typ typ =
       raise Terminate )
 
 and check_main () = 
-  let main = lookupEntry (id_make "main_") LOOKUP_CURRENT_SCOPE true in 
+  let main = lookupEntry (id_make "main") LOOKUP_CURRENT_SCOPE true in  (*look for main_ if you want tou support functions with same name ;) *)
   match main.entry_info with
   | ENTRY_function _ -> ()
   | _ -> Error.error "Couldn't find main function :("

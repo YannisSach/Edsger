@@ -23,10 +23,11 @@ let rec findType exp =
   | Constant_exp exp -> findType exp
   | Function_call (name, exps) ->
      let param_types = List.map findType exps in
-     let actual_param_types = List.map convert_to_typical_types param_types in
-     let _ = Printf.printf "Length of params %s:%d\n" name (List.length exps) in
-     let suffix = create_suffix actual_param_types in
-     let fun_name = String.concat "" [name;"_" ;suffix] in
+     let actual_param_types = List.map convert_to_typical_types param_types in (*CRUCIAL ARRAY MUST BE TURNED INTO POINTERS WHEN PASSED AS PARAMETERS*)
+     let fun_name = name in (* stopping supporting functions with same names and different parameters :( *)
+     (* let _ = Printf.printf "Length of params %s:%d\n" name (List.length exps) in *)
+     (* let suffix = create_suffix actual_param_types in *)
+     (* let fun_name = String.concat "" [name;"_" ;suffix] in *)
      (* let _ = Printf.printf "looking for %s\n" fun_name in *)
      let e = lookupEntry (id_make fun_name) LOOKUP_ALL_SCOPES true in 
      (match e.entry_info with
