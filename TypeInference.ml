@@ -66,6 +66,10 @@ let rec findType exp =
                                   | _ -> raise (Type_error "Error finding pointers"))
                         | "-"
                           | "+" -> findType e
+                        | "!" -> let ty = findType e in
+                                 (match ty with
+                                    TYPE_bool -> TYPE_bool
+                                  | _ -> raise (Type_error "Operator ! should be used with boolean types"))
                         | _ -> raise (Type_error "Wrong operator")
                        )
 
@@ -174,9 +178,9 @@ let rec findType exp =
                              (if (equalType t2 t3) then t2 else (Error.error "t1?t2:t3-> t2, t3 mismatch"; TYPE_none))
                            else (Error.error "t1?t2:t3-> t1 is not boolean type"; TYPE_none)
                           )
-  |New_op (t, None) -> t
+  |New_op (t, None) -> TYPE_pointer t (*Changed in Codegen *)
   |New_op (t, Some e) -> 
-    if (equalType (findType e) TYPE_int) then t else (Error.error "Wrong types in new operator"; TYPE_none)
+    if (equalType (findType e) TYPE_int) then TYPE_pointer t else (Error.error "Wrong types in new operator"; TYPE_none)
   |Delete_op e ->
     let t = findType e in
     (match t with

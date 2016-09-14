@@ -1,6 +1,8 @@
 open Ast
 open Lexer
-
+open Codegen
+open Llvm
+  
 let _ =
   try
     let i = Array.length Sys.argv in
@@ -33,9 +35,12 @@ let _ =
              )
       |_ -> (Printf.printf "Too many arguments!\nQuiting now...\n"; exit(0))
     );
-    Scopes.check_program  !program_tree
+    let _ = Scopes.check_program  !program_tree in
+    codegen_program !program_tree;
+    print_module "output.ll" Codegen.the_module;
+    (* dump_module Codegen.the_module; *)
   with Parsing.Parse_error ->
-    Printf.printf "Parsing error"
+    Printf.printf "Parsing error" 
 
 
 
