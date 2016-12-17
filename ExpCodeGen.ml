@@ -119,8 +119,8 @@ and get_env_params_types env global_decs =
 
   in
   let find_type_from_global name gl =
-    Printf.printf "Searching for %s\n" name;
-    Printf.printf "Global length: %d\n" (List.length gl);
+    (* Printf.printf "Searching for %s\n" name; *)
+    (* Printf.printf "Global length: %d\n" (List.length gl); *)
     let dec = List.find (has_name_in_var_dec name) gl (* with Not_found -> Ast.Variable_dec(TYPE_none,[]) *)
     in match dec with
        | Ast.Variable_dec(ty,l) -> (let wanted = List.find (has_name_in_dec name) l in
@@ -196,8 +196,8 @@ let rec find_function fun_name fun_name_list =
 let rec code_gen_exp exp =
   match exp with
     Id name ->  let v =
-                  Printf.printf "Trying to find %s...\n" name;
-                  print_hashtbl named_values;
+                  (* Printf.printf "Trying to find %s...\n" name; *)
+                  (* print_hashtbl named_values; *)
                   try
                     Hashtbl.find named_values name
                                  (* with Not_found -> raise (Type_error "Variable not found!") in *)
@@ -345,29 +345,29 @@ let rec code_gen_exp exp =
                             )  
                                   
 
-|Prefix_unary_as (op, e) -> (*Only Id's are acceptable*) print_string "vrike prefix unary reee";
-                                                         let ir = code_gen_exp e in
-                                                         (* dump_type (type_of ir); *)
-                                                         (match op with
-                                                          | "++" ->
-                                                             (* dump_value ir; *)
-                                                             print_string("before search");
-                                                             let expr = if (is_double_pointer ir) then Binary_op(e, "+", Double 1.0)
-                                                                                                                (* else if (is_op_with_pointer ir) then (print_string"vrike pointer"; Array(e,Int 1)) *)
-                                                                        else Binary_op(e,"+",Int 1) in
-                                                             let exp = code_gen_exp expr in
-                                                             let _ = build_store exp ir builder in
-                                                             (* dump_value ir; *)
-                                                             print_string "telos prefix";
-                                                             exp
-                                                          | "--" ->
-                                                             let expr = if (is_double_pointer ir) then Binary_op(e, "+", Double 1.0)
-                                                                        else Binary_op(e,"-",Int 1) in
-                                                             let exp = code_gen_exp expr in
-                                                             let _ = build_store exp ir builder in
-                                                             exp
-                                                          | _ -> Error.error "%s: Don't know what to do with prefix operator:" op; const_null int_type
-                                                         )
+|Prefix_unary_as (op, e) -> (*Only Id's are acceptable*) (* print_string "vrike prefix unary reee"; *)
+  let ir = code_gen_exp e in
+  (* dump_type (type_of ir); *)
+  (match op with
+   | "++" ->
+      (* dump_value ir; *)
+      (* print_string("before search"); *)
+      let expr = if (is_double_pointer ir) then Binary_op(e, "+", Double 1.0)
+                                                         (* else if (is_op_with_pointer ir) then (print_string"vrike pointer"; Array(e,Int 1)) *)
+                 else Binary_op(e,"+",Int 1) in
+      let exp = code_gen_exp expr in
+      let _ = build_store exp ir builder in
+      (* dump_value ir; *)
+      (* print_string "telos prefix"; *)
+      exp
+   | "--" ->
+      let expr = if (is_double_pointer ir) then Binary_op(e, "+", Double 1.0)
+                 else Binary_op(e,"-",Int 1) in
+      let exp = code_gen_exp expr in
+      let _ = build_store exp ir builder in
+      exp
+   | _ -> Error.error "%s: Don't know what to do with prefix operator:" op; const_null int_type
+  )
 
 |Postfix_unary_as (e, op) ->
   let ir = code_gen_exp e in
@@ -405,9 +405,9 @@ let rec code_gen_exp exp =
         
       (match e2 with
        | Postfix_unary_as (e, op) ->
-          print_string "postfix operator";
+          (* print_string "postfix operator"; *)
           let rhs' = code_gen_exp e in
-          let rhs = if(is_pointer e) then(print_string "it is"; build_load rhs' "loadtmp" builder)
+          let rhs = if(is_pointer e) then((* print_string "it is"; *) build_load rhs' "loadtmp" builder)
                     else rhs' in
           let lhs = code_gen_exp e1 in
           let _ = build_store rhs lhs builder in
@@ -416,7 +416,7 @@ let rec code_gen_exp exp =
                       | "++" -> "+"
                       | _ -> "-" )in
           let adde = if(is_double_pointer rhs') then( Binary_op(e, oper,Double 1.0))
-                     else ( print_string "kati ginetai"; Binary_op(e, oper,Int 1)) in
+                     else ( (* print_string "kati ginetai"; *) Binary_op(e, oper,Int 1)) in
           let add = code_gen_exp adde in
                                                                
             
@@ -448,7 +448,7 @@ let rec code_gen_exp exp =
           lhs
       )
    | _ ->
-      Printf.printf ("Complex asssignment\n");
+      (* Printf.printf ("Complex asssignment\n"); *)
       let op = (match op with
                 | "+=" -> "+"
                 | "-=" -> "-"
@@ -468,20 +468,20 @@ let rec code_gen_exp exp =
                         (ignore(String.index ty_exp '*');
                          build_load exp "loadcastingtmp" builder)
                       with Not_found -> ( exp) in
-                    print_string ty_exp;
+                    (* print_string ty_exp; *)
                     if (contains ty_exp "x86_fp80") then (  
-                      print_string ("found double");
+                      (* print_string ("found double"); *)
                       let ty = findLltype t1 in
                       build_fptosi exp ty "castingtmp" builder)
                     else if (contains ty_exp  "i16") then
-                      ( print_string ("found int");
+                      ( (* print_string ("found int"); *)
                         match t1 with
                         | TYPE_double -> let ty = findLltype t1 in  (* if we want double cast *)
                                          build_sitofp exp ty "castingtmp" builder
                         | _ -> let ty = findLltype t1 in
                                build_trunc_or_bitcast exp ty "castingtmp" builder )
                     else if (contains ty_exp "i8") then
-                      (print_string ("found char");
+                      ((* print_string ("found char"); *)
                        match t1 with
                        | TYPE_int -> let ty = findLltype t1 in
                                      build_sext_or_bitcast exp ty "castingtmp" builder
@@ -490,7 +490,7 @@ let rec code_gen_exp exp =
                        | _ -> let ty = findLltype t1 in
                               build_trunc_or_bitcast exp ty "castingtmp" builder )
                     else
-                      (print_string ("mpike sto else");
+                      ((* print_string ("mpike sto else"); *)
                        match t1 with
                        | TYPE_double -> let ty = findLltype t1 in
                                         build_sitofp exp ty "castingtmp" builder
