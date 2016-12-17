@@ -1,6 +1,6 @@
 open Format
 open Types
-
+       
 type program = declaration list and
      declaration =  |Variable_dec of (type_t * declarator list)
                     |Function_dec of (result_type * string * parameter list)
@@ -258,63 +258,75 @@ fprintf out "Id %s" n;
 | Constant_exp n ->                 (*edw exoume provlima *)
  print_expression out  n;
 | Function_call (s, e) ->
-  fprintf out (" %s (") s;
-  print_expressions out e;
-  fprintf out (" );");
+   fprintf out ("Function_call (%s, ") s;
+   print_expressions out e;
+   fprintf out (" );");
 | Array (t1, t2) ->  (* na dw giati einai expression * expression*)
-  print_expression out t1;
-  fprintf out "[";
-  print_expression out t2;
-  fprintf out "]"
-| Unary_op (s, e) ->
-  fprintf out " %s " s;
-  print_expression out e;
-| Binary_op (t1,s,t2) ->
-  print_expression out t1;
-  fprintf out " %s "  s;
-  print_expression out t2;
-| Prefix_unary_as (s, t) ->
-  fprintf out " %s " s;
-  print_expression out t;
-| Postfix_unary_as (t, s) ->
-  print_expression out t;
-  fprintf out " %s " s
-| Binary_as (t1, s, t2) ->
-  print_expression out t1;
-  fprintf out " %s "  s;
-  print_expression out t2;
-| Casting (ty, e)->
-  fprintf out "Casting ";
-  print_type_t out ty;
-  print_expression out e;
-  fprintf out ";"
-|  Question  (t1, t2,t3) ->
+   fprintf out "Array (";
    print_expression out t1;
-   fprintf out " ? ";
+   fprintf out "[";
    print_expression out t2;
-   fprintf out " : ";
-   print_expression out t3;
+   fprintf out "]";
+   fprintf out ")"
+| Unary_op (s, e) ->
+   fprintf out "Unary_op (%s, " s;
+   print_expression out e;
+   fprintf out ")"
+| Binary_op (t1,s,t2) ->
+   fprintf out "Binary_op (";
+   print_expression out t1;
+   fprintf out " %s "  s;
+   print_expression out t2;
+   fprintf out ")"
+| Prefix_unary_as (s, t) ->
+   fprintf out "Prefix_unary_as (%s, " s;
+   print_expression out t;
+   fprintf out ")"
+| Postfix_unary_as (t, s) ->
+   fprintf out "Postfix_unary_as(";
+   print_expression out t;
+   fprintf out ", %s) " s
+| Binary_as (t1, s, t2) ->
+   fprintf out "Binary_as (";
+   print_expression out t1;
+   fprintf out " %s "  s;
+   print_expression out t2;
+   fprintf out ")"
+| Casting (ty, e)->
+   fprintf out "Casting( ";
+   print_type_t out ty;
+   print_expression out e;
+   fprintf out ")"
+|  Question  (t1, t2,t3) ->
+    fprintf out "Question(";
+    print_expression out t1;
+    fprintf out " ? ";
+    print_expression out t2;
+    fprintf out " : ";
+    print_expression out t3;
+    fprintf out ")"
 | New_op (y, ex) ->
-  fprintf out " New ";
-  print_type_t  out  y;
-  ( match ex with
-  	 | None -> ()
-  	 | Some exp -> print_expression out exp;
-  )
+   fprintf out "New( ";
+   print_type_t  out  y;
+   ( match ex with
+     | None -> ()
+     | Some exp -> print_expression out exp;
+   );
+   fprintf out ")"
 | Delete_op  (t) ->
-fprintf out " delete ";
-print_expression out t
-
+   fprintf out "Delete( ";
+   print_expression out t;
+   fprintf out ")"
 
 and pretty_print out t = match t with
-| None -> printf "Empty"
-| Some tree -> print_program out tree
+  | None -> printf "Empty"
+  | Some tree -> print_program out tree
 
 let print_teliko progr =
-    force_newline ();
-    printf  "*** Pretty Printing AST ***";
-    force_newline ();
-    printf "***************************";
-    force_newline ();
-    printf "%a" pretty_print  progr;
-    force_newline ()
+  force_newline ();
+  printf  "*** Pretty Printing AST ***";
+  force_newline ();
+  printf "***************************";
+  force_newline ();
+  printf "%a" pretty_print  progr;
+  force_newline ()

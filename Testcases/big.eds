@@ -15,12 +15,11 @@ int main ()
  
     }
     if (rings >= 1) {
-      hanoi(source, auxiliary, target, rings);
+      hanoi(source, auxiliary, target, rings-1);
       move(source, target);
       hanoi(auxiliary, target, source, rings-1);
     }
   }
-  break ;
   writeString("Please, give the number of rings: ");
   numberOfRings = readInteger();
   writeString("\nHere is the solution:\n\n");

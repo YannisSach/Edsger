@@ -1,64 +1,73 @@
 FLAGS = -v
+BUILD-DIR = ./build
+OCAMLC = /home/yannis/.opam/4.03.0/bin/ocamlopt -c
+OCAMLCI = /home/yannis/.opam/4.03.0/bin/ocamlopt -i
 
-all: parser lexer compiler 
-	ocamlc -o compiler Error.cmo Hashcons.cmo Identifier.cmo Types.cmo Symbol.cmo str.cma TypeInference.cmo Symbtest.cmo Scopes.cmo Ast.cmo Parser.cmo Lexer.cmo  Main.cmo
+all: parser lexer types ast symbol scopes exp_code_gen code_gen compiler
+	/home/yannis/.opam/4.03.0/bin/ocamlopt -cc g++ -ccopt -L/usr/lib/llvm-3.5/lib -I /home/yannis/.opam/4.03.0/lib/llvm/  Error.cmx Hashcons.cmx Identifier.cmx Types.cmx Symbol.cmx llvm.cmxa llvm_analysis.cmxa str.cmxa TypeInference.cmx Symbtest.cmx  Ast.cmx Scopes.cmx Parser.cmx Lexer.cmx  ExpCodeGen.cmx Codegen.cmx Main.cmx -o compiler
 	cp compiler ./Testcases
+	cp compiler ./Tsan
 
 lexer: parser Lexer.mll       # generates lexer.ml
 	ocamllex Lexer.mll
-	ocamlc -c Parser.mli
-	ocamlc -c Lexer.ml
+	$(OCAMLC) Parser.mli
+	$(OCAMLC) Lexer.ml
 
 parser: Parser.mly ast  # generates parser.ml and parser.mli
-	ocamlyacc $(FLAGS) Parser.mly
-	ocamlc -c Parser.mli
-	ocamlc -c Parser.ml
+	ocamlyacc -v $(FLAGS) Parser.mly
+	$(OCAMLC) Parser.mli
+	$(OCAMLC) Parser.ml
 
 
-compiler: parser ast scopes
-	ocamlc -c Parser.mli
-	ocamlc -c Main.ml
+compiler: parser error ast scopes
+	$(OCAMLC) Parser.mli
+	$(OCAMLC) -I /home/yannis/.opam/4.03.0/lib/llvm Main.ml
 
 
 symbtest : Symbtest.ml symbol
-	ocamlc -i Symbtest.ml > Symbtest.mli
-	ocamlc -c Symbtest.mli
-	ocamlc -c Symbtest.ml
+	$(OCAMLCI) Symbtest.ml > Symbtest.mli
+	$(OCAMLC) Symbtest.mli
+	$(OCAMLC) Symbtest.ml
 
 scopes:  Scopes.ml symbol symbtest type_inference
-	ocamlc -i Scopes.ml > Scopes.mli	
-	ocamlc -c Scopes.mli
-	ocamlc -c Scopes.ml
+	$(OCAMLCI)  Scopes.ml > Scopes.mli	
+	$(OCAMLC) Scopes.mli
+	$(OCAMLC) Scopes.ml
 
 ast: Ast.mli Ast.ml types
-	ocamlc -c Ast.mli
-	ocamlc -c Ast.ml
+	$(OCAMLC) Ast.mli
+	$(OCAMLC) Ast.ml
 
 types: Types.mli Types.ml
-	ocamlc -c Types.mli
-	ocamlc -c Types.ml
+	$(OCAMLC) Types.mli
+	$(OCAMLC) Types.ml
 
 hashcons: Hashcons.mli Hashcons.ml
-	ocamlc -c Hashcons.mli
-	ocamlc -c Hashcons.ml
+	$(OCAMLC) Hashcons.mli
+	$(OCAMLC) Hashcons.ml
 
 error: Error.ml Error.mli
-	ocamlc -c Error.mli
-	ocamlc -c Error.ml
+	$(OCAMLC) Error.mli
+	$(OCAMLC) Error.ml
 
 identifier: hashcons Identifier.ml Identifier.mli
-	ocamlc -c Identifier.mli
-	ocamlc -c Identifier.ml
+	$(OCAMLC) Identifier.mli
+	$(OCAMLC) Identifier.ml
 
 
 symbol: identifier error types  Symbol.ml
-	ocamlc -i Symbol.ml > Symbol.mli
-	ocamlc -c Symbol.mli
-	ocamlc -c Symbol.ml
+	$(OCAMLCI) Symbol.ml > Symbol.mli
+	$(OCAMLC) Symbol.mli
+	$(OCAMLC) Symbol.ml
 
 type_inference : TypeInference.ml symbol
-	ocamlc -c TypeInference.ml
+	$(OCAMLC) TypeInference.ml
 
+exp_code_gen: ExpCodeGen.ml
+	$(OCAMLC) -I /home/yannis/.opam/4.03.0/lib/llvm ExpCodeGen.ml
+
+code_gen: Codegen.ml
+	$(OCAMLC) -I /home/yannis/.opam/4.03.0/lib/llvm Codegen.ml
 
 clean: 
 	$(RM) *.cmo *.cmx *.o *.cmi Parser.mli  Parser.ml Parser.output Lexer.ml 

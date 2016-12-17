@@ -52,7 +52,7 @@ type final_typ =
   | Type_string
   | Type_array of final_typ * int
 type var_typ = Final_type of final_typ | Pointer of var_typ * final_typ
-val program_tree : program  option ref
+val program_tree : program option ref
 val print_program : Format.formatter -> declaration list -> unit
 val print_type_t : Format.formatter -> type_t -> unit
 val print_declaration : Format.formatter -> declaration -> unit
@@ -65,4 +65,4 @@ val print_statement : Format.formatter -> statement -> unit
 val print_expressions : Format.formatter -> expression list -> unit
 val print_expression : Format.formatter -> expression -> unit
 val pretty_print : Format.formatter -> declaration list option -> unit
-val print_teliko : program option -> unit
+val print_teliko : declaration list option -> unit

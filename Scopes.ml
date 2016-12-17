@@ -47,7 +47,7 @@ and check_declaration t = match t with
      ignore(List.map (registerParams t) params);  
      ignore(endFunctionHeader t (ty));
      check_declarations decls;
-     check_statements stms;
+     (try check_statements stms with Type_error _ -> raise (Type_error ""));
      if (equalType (!currentScope.sco_type) (TYPE_proc)) && not ( !find_return) then (  find_return := false)
      else if( !find_return) then ( find_return := false;)  else Error.error "Couldn't find return in non void function" ;
      closeScope()
@@ -80,7 +80,7 @@ and registerParams t param  = match param with
 and check_statements stms = match stms with
   | [] -> ()
   | stm :: rest ->
-     check_statement stm;
+     let _ = try check_statement stm with Type_error _ -> Printf.printf "\nThe Error was found here:\n"; printf "%a\n" print_statement stm; raise (Type_error "") in
      check_statements rest;
 
 and check_statement stm = 
@@ -89,40 +89,41 @@ and check_statement stm =
   | Simple_expression Some exp -> ignore (findType exp)
   | Statements stm-> check_statements stm
   | If_stmt (exp, stm) ->
-     ignore (equalType (findType exp) TYPE_bool); (* prepei na dei ama einai typoy bool i exp *)
+     let _ = try equalType (findType exp) TYPE_bool with Type_error _ -> raise (Type_error "") in(* prepei na dei ama einai typoy bool i exp *)
      check_statement stm;
   | If_else_stmt (exp, stm1, stm2) ->
-     ignore (equalType (findType exp) TYPE_bool);
+     let _ = try equalType (findType exp) TYPE_bool with Type_error _ ->  raise (Type_error "") in
      check_statement stm1;
      check_statement stm2;
   | For_loop (tag,e1,e2,e3,s) ->
      (match e1 with
         None -> ()
        |Some e -> ignore (findType e)
-     );
-     (match e2 with
-        None -> ()
-       |Some e -> ignore (equalType (findType e) TYPE_bool)
-     );
-     (match e3 with
-        None -> ()
-       |Some e -> ignore (findType e)
-     );
-     check_statement s
-                     
-  | Branch (str1, str2)->
-     (*check_loop s1; (* checks if we are in a loop *)*)
-     if (!for_loop == 0) then Error.error "Break or continue not inside a loop" else ()
+   );
+   (match e2 with
+      None -> ()
+     |Some e -> ignore (equalType (findType e) TYPE_bool)
+   );
+   (match e3 with
+      None -> ()
+     |Some e -> ignore (findType e)
+   );
+   for_loop:= !for_loop +1;
+   check_statement s;
+   for_loop:= !for_loop - 1;                
+| Branch (str1, str2)->
+   (* check_loop s1; (\* checks if we are in a loop *\) *)
+   if (!for_loop == 0) then Error.error "Break or continue not inside a loop" else ()
 
-  | Return ex ->
-     (match ex with
-      | None ->
-         ignore (
-    	     let typos = !currentScope.sco_type in
-	     check_fun_type (typos) (TYPE_proc))
-      | Some expr ->
-         ignore (check_fun_type (!currentScope.sco_type) (findType expr)));
-     (* ignore(Symbtest.printSymbolTable());    *)
+| Return ex ->
+   (match ex with
+    | None ->
+       ignore (
+    	   let typos = !currentScope.sco_type in
+	   check_fun_type (typos) (TYPE_proc))
+    | Some expr ->
+       ignore (check_fun_type (!currentScope.sco_type) (findType expr)));
+(* ignore(Symbtest.printSymbolTable());    *)
 
 and check_fun_type scope_typ typ = 
   if (equalType scope_typ typ) then

@@ -19,7 +19,7 @@ void bsort (int * x, int n)
 		for (i = 0, changed = false; i < n-1; i++)
 			if (x[i] > x[i+1]) {
 				readString (x[1], s);
-				swap(x[i], a[i+1]);
+				swap(x[i], x[i+1]);
 				changed = true;
 			}
 }

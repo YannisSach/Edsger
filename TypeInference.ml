@@ -12,12 +12,13 @@ let rec findType exp =
                (match e.entry_info with
                   ENTRY_variable variable_info ->  variable_info.variable_type
                 | ENTRY_parameter parameter_info -> parameter_info.parameter_type
-                | _ -> let _ = Error.error "%s:this is not a variable" name in TYPE_none
+                | _ -> let _ = Error.error "%s:this is not a variable" name in (raise (Type_error ""))
                )
 
   | Int int -> TYPE_int
   | Double double -> TYPE_double
   | Char char -> TYPE_char
+  | String "NULL" -> TYPE_pointer TYPE_none
   | String str -> TYPE_array (TYPE_char,0) (*Array (TYPE_pointer *)
   | Bool bool -> TYPE_bool (* ... *)
   | Constant_exp exp -> findType exp
@@ -32,14 +33,14 @@ let rec findType exp =
      let e = lookupEntry (id_make fun_name) LOOKUP_ALL_SCOPES true in 
      (match e.entry_info with
         ENTRY_function function_info -> (
-        let typical_param_types = List.map (function x -> match x.entry_info with ENTRY_parameter a -> a.parameter_type | _ -> Error.error "No reason to be here"; TYPE_none) function_info.function_paramlist in
+        let typical_param_types = List.map (function x -> match x.entry_info with ENTRY_parameter a -> a.parameter_type | _ -> Error.error "No reason to be here"; raise (Type_error "")) function_info.function_paramlist in
         (try 
            let result = List.map2 equalType actual_param_types typical_param_types in
            let correct = List.fold_left (&&)  true  result in
-           if correct then function_info.function_result else (Error.error "fun %s: Mismatch between actual and typical params" name; TYPE_none)
+           if correct then function_info.function_result else (Error.error "fun %s: Mismatch between actual and typical params" name; raise (Type_error ""))
          with Invalid_argument _ ->
            Error.error "call of %s function has different length of params" name;
-           TYPE_none
+           raise (Type_error "")
         )
       )
       | _ -> raise (Type_error "This function has no result")
@@ -50,11 +51,11 @@ let rec findType exp =
                         (match t1 with 
                          | TYPE_array (ty,_) -> ty
                          | TYPE_pointer x -> x
-                         | _ -> (Error.error "This is neither a pointer nor an array"; TYPE_none)
+                         | _ -> (Error.error "This is neither a pointer nor an array"; raise (Type_error ("")))
                         )
                       else 
                         (Error.error "Left expression in array form does not evaluate to integer type";
-                         TYPE_none
+                         raise (Type_error "")
                         )
 
 
@@ -81,22 +82,23 @@ let rec findType exp =
                                            |  TYPE_int, TYPE_int 
                                               | TYPE_double, TYPE_double 
                                               | TYPE_pointer _, TYPE_int -> t1
-                                           | TYPE_array (t,_), TYPE_int -> TYPE_pointer t (*treating arrays as pointers*)
-                                           | _,_ -> Error.error "%s %s %s Invalid arguments for binary operator" (convert_type_to_char t1) (convert_type_to_char t2) op ; TYPE_none
+                                           | TYPE_int, TYPE_pointer _ -> t2
+                                             | TYPE_array (t,_), TYPE_int -> TYPE_pointer t (*treating arrays as pointers*)
+                                           | _,_ -> Error.error "%s %s %s Invalid arguments for binary operator" (convert_type_to_char t1) (convert_type_to_char t2) op ; raise (Type_error (""))
                                           )
                                             
                               | "*" 
                                 | "/" ->  (match t1, t2 with 
                                              TYPE_int, TYPE_int 
                                            | TYPE_double, TYPE_double  -> t1
-                                           | _,_ -> Error.error "%s: Invalid arguments for binary operator" op ; TYPE_none
+                                           | _,_ -> Error.error "%s: Invalid arguments for binary operator" op ; raise (Type_error "")
                                           )
                               | "%" -> (match t1, t2 with
                                           TYPE_int, TYPE_int -> t1
-                                        | _, _ -> Error.error "%s: Invalid arguments for binary operator" op ; TYPE_none
+                                        | _, _ -> Error.error "%s: Invalid arguments for binary operator" op ; raise (Type_error "")
                                        )
                               | "=="
-                                | "!=" ->  if (equalType t1 t2 ) then TYPE_bool else (Error.error "%s: Invalid arguments in comparison" op; TYPE_none)
+                                | "!=" ->  if (equalType t1 t2 ) then TYPE_bool else (Error.error "%s: Invalid arguments in comparison" op; raise (Type_error "" ))
                               |"<"
                                |">"
                                | "<="
@@ -106,15 +108,15 @@ let rec findType exp =
                                              | TYPE_pointer _ , TYPE_pointer _ 
                                              | TYPE_array _, TYPE_array _ (*treating arrays as pointers*)
                                              | TYPE_bool, TYPE_bool  -> TYPE_bool
-                                          | _, _ -> (Error.error "%s: Invalid arguments in comparison" op; TYPE_none)
+                                          | _, _ -> (Error.error "%s Invalid arguments in comparison" op; raise (Type_error ""))
                                          )
                               |"&&"
                                | "||" -> (match t1, t2 with
                                             TYPE_bool, TYPE_bool -> TYPE_bool
-                                           |_,_ -> (Error.error "%s: Invalid arguments in logical comparison" op; TYPE_none)
+                                           |_,_ -> (Error.error "%s: Invalid arguments in logical comparison" op; raise (Type_error ""))
                                          )
                               | "," -> t2
-                              | _ -> (Error.error "%s: Unkown binary operator" op; TYPE_none)
+                              | _ -> (Error.error "%s: Unkown binary operator" op; raise (Type_error ""))
                              )
 
 
@@ -124,7 +126,7 @@ let rec findType exp =
        TYPE_int 
       |TYPE_double 
        |TYPE_pointer _ -> ty
-      | _ -> (Error.error "%s Unary assignement with wrong type" op; TYPE_none)
+      | _ -> (Error.error "%s Unary assignement with wrong type" op; raise (Type_error ""))
     )
   |Postfix_unary_as (e, op) ->
     let ty = findType e in 
@@ -132,28 +134,42 @@ let rec findType exp =
        TYPE_int 
       |TYPE_double 
        |TYPE_pointer _ -> ty
-      | _ -> (Error.error "%s Unary assignement with wrong type" op; TYPE_none)
+      | _ -> (Error.error "%s Unary assignement with wrong type" op; raise (Type_error ""))
     )
   |Binary_as (e1, op, e2) ->
     let t1 = findType e1 in 
     (match t1 with
-     |TYPE_array (_,_) -> (Error.error "%s: Cannot assign value to array" op; TYPE_none)
+     |TYPE_array (_,_) -> (Error.error "%s: Cannot assign value to array" op; raise (Type_error ""))
      | _ ->
         (let t2 = findType e2 in 
-
-         (match op with 
-          |  "=" -> if ( equalType t1 t2 ) then t1 else (Error.error "%s: Binary assignement wrong operands" op; TYPE_none)
+         if (e2 = ( String "NULL")) then t1 else
+          (match op with 
+          |  "=" -> if ( equalType t1 t2 ) then t1 else
+                      (Error.error "%s Binary assignement wrong operands type1: %s type2: %s" op (convert_type_to_char t1)(convert_type_to_char t2);
+                       let _ = Printf.printf "Error Here\n" in
+                       let c1 = convert_type_to_char t1 in
+                       let c2 = convert_type_to_char t2 in
+                       let _ = Printf.printf "%s vs %s \n" c1 c2 in
+                       let _ = match e1 with
+                           Id(name) -> Printf.printf "->%s<-" name
+                          |_ -> ()
+                       in
+                       let _ = match e2 with
+                           Id(name) -> Printf.printf "->%s<-" name
+                          |_ -> ()
+                       in
+                       raise (Type_error ""))
           | "*=" 
             | "/=" -> 
              (match t1,t2 with 
                 TYPE_int , TYPE_int
               | TYPE_double, TYPE_double -> t1
-              | _, _ -> (Error.error "%s: Binary assignment wrong types" op; TYPE_none)
+              | _, _ -> (Error.error "%s: Binary assignment wrong types" op; raise (Type_error ""))
              )
           | "%=" ->
              (match t1,t2 with 
                 TYPE_int, TYPE_int -> t1
-              | _, _ -> (Error.error "%s Binary assignment wrong types" op; TYPE_none)
+              | _, _ -> (Error.error "%s Binary assignment wrong types" op; raise (Type_error ""))
              )
           | "+="
             | "-=" -> 
@@ -161,9 +177,9 @@ let rec findType exp =
                 TYPE_int, TYPE_int
               | TYPE_double, TYPE_double 
                 |TYPE_pointer _ , TYPE_int -> t1
-              | _, _ -> (Error.error "%s Binary assignment wrong types" op; TYPE_none)
+              | _, _ -> (Error.error "%s Binary assignment wrong types" op; raise (Type_error ""))
              )
-          |_ -> (Error.error "%s: Unkown binary operator" op; TYPE_none)
+          |_ -> (Error.error "%s: Unkown binary operator" op; raise (Type_error ""))
          )
 
         )
@@ -175,17 +191,17 @@ let rec findType exp =
                           let t2 = findType e2 in
                           let t3 = findType e3 in
                           (if (equalType t1 TYPE_bool) then 
-                             (if (equalType t2 t3) then t2 else (Error.error "t1?t2:t3-> t2, t3 mismatch"; TYPE_none))
-                           else (Error.error "t1?t2:t3-> t1 is not boolean type"; TYPE_none)
+                             (if (equalType t2 t3) then t2 else (Error.error "t1?t2:t3-> t2, t3 mismatch"; raise (Type_error "")))
+                           else (Error.error "t1?t2:t3-> t1 is not boolean type"; raise (Type_error ""))
                           )
   |New_op (t, None) -> TYPE_pointer t (*Changed in Codegen *)
   |New_op (t, Some e) -> 
-    if (equalType (findType e) TYPE_int) then TYPE_pointer t else (Error.error "Wrong types in new operator"; TYPE_none)
+    if (equalType (findType e) TYPE_int) then TYPE_pointer t else (Error.error "Wrong types in new operator"; raise (Type_error ""))
   |Delete_op e ->
     let t = findType e in
     (match t with
        TYPE_pointer _ -> t
-     | _ -> (Error.error "Wrong wrong arguments in delete"; TYPE_none)
+     | _ -> (Error.error "Wrong arguments in delete"; raise (Type_error ""))
     )
   |Paren_expression e -> findType e
 

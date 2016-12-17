@@ -2,8 +2,7 @@ open Llvm
 open Types
 open Scopes
 open ExpCodeGen
-open Ast
-       
+
 exception Error of string
 
 let context = global_context ()
@@ -12,7 +11,7 @@ let builder =  ExpCodeGen.builder
 let named_values:(string, llvalue) Hashtbl.t = ExpCodeGen.named_values
 let integer_type  = i16_type context
 let null_type = i1_type context
-let bool_type = i8_type context
+let bool_type = i1_type context
 let char_type = i8_type context
 let double_type = ExpCodeGen.double_type
 let fun_names = ExpCodeGen.fun_names                        
@@ -21,7 +20,6 @@ let returns = ref true
 let continue_tags : (string *llbasicblock) list ref = ref []
 let break_tags : (string * llbasicblock ) list ref = ref []
 let old_bindings : (string * llvalue) list ref = ref []
-let global_decs : (Ast.declaration) list ref = ref []
 (* this fun takes the type of the elem and returns the lltype *)
 
                                                      
@@ -38,61 +36,7 @@ let rec type_to_lltype ty = match ty with
   | Types.TYPE_proc -> void_type context
   | _ -> null_type                        
 
-and print_decs decs =
-  List.iter (fun x -> match x with
-                      | Variable_dec _ -> Printf.printf "Variable_list\n"
-                      | Function_dec (_,name,_) -> Printf.printf "Declaration of %s\n" name
-                      | Function_def  (_,name,_,_,_) -> Printf.printf "Definition of %s\n" name) decs
-            
-and sort_decls dec_list =
-  let (variables,rest) = List.partition (fun x -> match x with Variable_dec _ -> true | _ -> false) dec_list in
-  let (definitions,declarations) = List.partition (fun x -> match x with Function_def _ -> true | _ -> false) rest in
-  let dec_to_def defs dec =
-    let def_eqs_dec  dec def =
-      match def,dec with
-      |Function_def (_,f,_,_,_), Function_dec(_,c,_) -> f = c
-      | _ ,_ -> false
-    in try List.find (def_eqs_dec dec) defs
-       with Not_found -> dec
-  in
-  let def_to_dec def = match def with
-    |Function_def (ty,name,args,_,_) -> Function_def(ty,name,args,[],[]) (*Function_dec initialy*)
-    | _ -> raise Terminate in
-  let alldecs = List.map def_to_dec definitions in
-  let ordered_defs_and_lib_decs = List.map (dec_to_def definitions) declarations in
-  let (ordered_defs,lib_decs) = List.partition (fun x -> match x with Function_def _ -> true | _ -> false) ordered_defs_and_lib_decs in
-  let _ = Printf.printf "%d replacements\n" (List.length ordered_defs) in
-  let rest_defs = List.filter (fun x -> let b = List.exists ((fun x y-> x = y) x) ordered_defs in not b ) definitions in
-  let defs = sort_definitions(ordered_defs@rest_defs) in (* ordered_defs@rest_defs in *)
-  lib_decs@variables@alldecs@defs
-
-and dec_with_name name dec =
-  match dec with Function_dec(_,n,_) -> n = name | _ -> false
-
-  
-and sort_definitions defs =
-  let compare d1 d2 =
-    match d1, d2 with
-    |Function_def(_,n1,_,dec1,_), Function_def(_,n2,_,dec2,_) ->
-      if(n1 = n2) then 0 else(
-        let (defs,decs) = List.partition (fun x -> match x with Function_def _ -> true |_ -> false) dec2 in
-        if(List.exists (dec_with_name n1) decs ) then -1
-        else if(List.exists (fun x -> (compare d1 x) = -1) defs) then -1 (*a def is smaller than*)
-        else (match d2, d1 with
-              |Function_def(_,n1,_,dec1,_), Function_def(_,n2,_,dec2,_) ->
-                if(n1 = n2) then 0 else(
-                  let (defs,decs) = List.partition (fun x -> match x with Function_def _ -> true |_ -> false) dec2 in
-                  if(List.exists (dec_with_name n1) decs ) then 1
-                  else if(List.exists (fun x -> (compare d1 x) = -1) defs) then 1 else 0) (*a def is smaller than*)
-              | _, _ -> 0)
-      )
-               
-    (*used to be just 0*)
-    |_,_ -> 1
-  in List.sort compare defs
-             
-  
-        
+           
 and param_type par = match par with
   | Ast.By_val_param(ty,name) -> type_to_lltype ty
   | Ast.By_ref_param(ty,name) -> let typ = type_to_lltype ty in
@@ -120,15 +64,15 @@ let rec is_return_last_instuction stmts = match stmts with
 (* HAVE TO CHANGE IT TO UNIT *)
 let rec codegen_program prog =
   match prog with
-  | Some decs -> let decs = sort_decls decs in codegen_declars decs
+  | Some decs -> codegen_declars decs
   | None -> codegen_declars []
-                            
+
 and codegen_declars x = match x with
-  |  [] -> const_null null_type
-  | x::rest ->
+    [] -> const_null null_type
+  | x::rest -> 
      ignore(codegen_declaration x);
+     
      codegen_declars rest
-                     
 and remove_variable_delcarations x = match x with
     [] -> ()
   | x::rest ->
@@ -137,12 +81,7 @@ and remove_variable_delcarations x = match x with
        ignore(
            List.map (fun dec -> match dec with
                                 | Ast.Simple_declarator(name)
-                                  | Ast.Complex_declarator(name,_)-> (* let reg = Str.regexp "_env" in *)
-                                   (* let _ =Printf.printf "Didn't delete %s\n" name in *)
-                                   (* let _ = try ignore(Str.search_forward reg name 0);  *)
-                                   (*         with Not_found -> Hashtbl.remove named_values name; Printf.printf "Deleted\n" in *)
-                                   (* () *)
-                                   Hashtbl.remove named_values name
+                                  | Ast.Complex_declarator(name,_)-> Hashtbl.remove named_values name 
                     ) decs
          )
      |_-> remove_variable_delcarations rest
@@ -150,154 +89,117 @@ and remove_variable_delcarations x = match x with
                                        
 and codegen_declaration x = match x with
   (* maybe we dont need the fun dec but never mind *)
-
   | Ast.Function_dec(ty, name, parameters) ->
-     if(match !env with Global _ -> true | _ ->   let fn_name_t = String.concat "_" (name::List.tl(!fun_names)) in
-                                                  match lookup_function fn_name_t the_module with None -> true | _ -> false) then(
-       
-       (* if(match !env with Global _ -> true | _ -> true) then( *)
-       Printf.printf("Fun dec\n");
-       let llpars = Array.of_list (List.map param_type parameters) in   (* llpars is an array of the params *)
-       let fun_typ = type_to_lltype ty in                           (* THATS WRONG HAVE TO CHANGE WITH MATCH *)
-       let ft = function_type fun_typ llpars in
-       let fn_name = String.concat "_" (name::!fun_names) in
-       let f = declare_function fn_name ft the_module in
-       Array.iteri ( fun i a ->
-                     let p = (List.nth parameters i) in
-                     match p with
-                     | Ast.By_val_param(ty, name)->
-                        (* HAVE TO SEE THE WAY WE TAKE IT *)
-                        set_value_name name a;
-                     (* Printf.printf "adding %s...\n" name; *)
-                     (* Hashtbl.add named_values name a *)
-                     | Ast.By_ref_param(ty, name)->
-                        set_value_name name a;
-                   (* Printf.printf "adding %s...\n" name; *)
-                   (* Hashtbl.add named_values name a *)
-                   )
-                   (params f); f
-     )else const_null null_type
+     let llpars = Array.of_list (List.map param_type parameters) in   (* llpars is an array of the params *)
+     let fun_typ = type_to_lltype ty in                           (* THATS WRONG HAVE TO CHANGE WITH MATCH *) 
+     let ft = function_type fun_typ llpars in
+     let fn_name = String.concat "_" (name::!fun_names) in
+     let f = declare_function fn_name ft the_module in
+     Array.iteri ( fun i a ->
+                   let p = (List.nth parameters i) in
+                   match p with
+                   | Ast.By_val_param(ty, name)->
+                      (* HAVE TO SEE THE WAY WE TAKE IT *)
+                      set_value_name name a;
+                      Hashtbl.add named_values name a
+                   | Ast.By_ref_param(ty, name)->
+                      set_value_name name a;
+                      Hashtbl.add named_values name a
+                 )
+                 (params f); f
   | Ast.Variable_dec(ty, decs) ->
-     Printf.printf("Var dec\n");
-     (*let _ = block_parent (insertion_block builder) in*)
+     let _ = block_parent (insertion_block builder) in
      let typos = type_to_lltype ty in (*we want the type of the vars *)
      let value = init_value ty in (* NOT SURE IF WE WANT THE POINTER TO BE NULL AT FIRST *)
-     let _ = match !env with
-       | Global (_) -> let _ = List.iter (fun x -> match x with
-                                                   | Ast.Simple_declarator(name) -> ignore(env := update_env name (!env))
-                                                   | Ast.Complex_declarator(name, _) -> ignore(env := update_env name (!env)))
-                                         decs
-                       in 
-                       global_decs := Ast.Variable_dec(ty,decs)::!global_decs;
-                       Printf.printf "New length:%d\n" (List.length !global_decs)
-       | Nested _ ->ignore( 
-                        List.map (fun dec ->
-                            match dec with
-                            | Ast.Simple_declarator(name) ->
-                               Printf.printf "I'm here adding %s\n" name;
-                               let alloca = build_alloca typos name builder in
-                               ignore(build_store value alloca builder);
-                               Hashtbl.add named_values name alloca;
-                               env := update_env name (!env)
-                            | Ast.Complex_declarator(name, exp) ->
-                               let leng = code_gen_exp exp in
-                               (* dump_value leng; *)(* we have the length of the array in llvalue *)
-                               let decl = build_alloca (pointer_type typos) name builder in
-                               let alloca = build_array_malloc (typos) leng "allocatmp" builder in (* or build array malloc/alloca *)
-                               let _ = build_store alloca decl builder in
-                               Hashtbl.add named_values name decl;
-                               env := update_env name !env
-                          (* HAVE TO CHECK IT AGAIN *)
-                          ) decs) in
+     let _ = List.map (fun dec ->
+                 match dec with
+                 | Ast.Simple_declarator(name) ->
+                    let alloca = build_alloca typos name builder in
+                    ignore(build_store value alloca builder);
+                    Hashtbl.add named_values name alloca;
+                    if(List.mem name !environment) then () else environment := name::!environment
+                 | Ast.Complex_declarator(name, exp) ->
+                    let leng = code_gen_exp exp in
+                    (* dump_value leng; *)(* we have the length of the array in llvalue *)
+                    let decl = build_alloca (pointer_type typos) name builder in
+                    let alloca = build_array_malloc (typos) leng "allocatmp" builder in (* or build array malloc/alloca *)
+                    let _ = build_store alloca decl builder in
+                    Hashtbl.add named_values name decl;
+                    if(List.mem name !environment) then () else environment := name::!environment
+               (* HAVE TO CHECK IT AGAIN *)
+               ) decs; in
      const_null null_type;
 
-  | Ast.Function_def(ty, name, parameters, decls, stms) ->
-     Printf.printf "Fun def\n";
-     let parameters_old = parameters in
-     env:= Nested([],!env);
-     let env_params = difference_with_env !env parameters in 
-     update_env_with_params parameters !env; (*Should create side effect*)
-     let _ = print_env_pars !env in
-     let env_params_types = get_env_params_types env_params !global_decs in
-     let _ = print_hashtbl named_values in
-     let llenv = Array.of_list env_params_types in
-     let llpars = Array.of_list (List.map param_type parameters) in
-     let llpars = if(name = "main") then llpars else  Array.append llpars llenv in
-     let env_params_to_passed = List.map (fun x -> Ast.By_ref_param (TYPE_none,x)) env_params in
-     let parameters = if(name = "main") then parameters else parameters@env_params_to_passed in
-     let fun_typ = type_to_lltype ty in (* THATS WRONG HAVE TO CHANGE WITH MATCH *)
-     let ft = function_type fun_typ llpars in (* creates a function *)
-     let fn_name = String.concat "_" (name::!fun_names) in
-     let the_fun = (match lookup_function fn_name the_module with
-                    | None -> fun_names:= name :: !fun_names;
-                              declare_function fn_name ft the_module
-                    (* | Some f -> fun_names := name::!fun_names; f in *)
-                    | Some f -> fun_names := name :: !fun_names; delete_function f; declare_function fn_name ft the_module  ) in
-     (* create a new basic block for the function *)
-     let label = String.concat "_" [name;"entry"] in
-   
-     let bb= append_block context label the_fun in
-     fun_bbs := bb :: !fun_bbs;
-     position_at_end bb builder; (* point at the end of the new created block *)
-     Printf.printf "%s will be called with %d params\n" name (Array.length (params the_fun));
-     (* we initialize the params and add them to Hashtable *)
-     let _ = Array.iteri(fun i a ->
-                 let n = (List.nth parameters i) in
-                 match n with
-                 | Ast.By_val_param(ty, name) ->
-                    Printf.printf "Adding by_val param %s\n" name;
-                    let typ = type_to_lltype ty in
-                    set_value_name name a;
-                    let alloca = build_alloca typ name builder in
-                    ignore(build_store a alloca builder);
-                    Hashtbl.add named_values name alloca;
-                 | Ast.By_ref_param(ty, name) ->
-                    Printf.printf "Adding by_ref param %s\n" name;
-                    let _ = set_value_name name a in
-                    Hashtbl.add named_values name a
-               (*let _ = match ty with |TYPE_none -> ignore(update_env name !env) | _ ->() in *) (*Add the env_params*)
-               (* match ty with TYPE_none -> () | _ -> Hashtbl.add named_values name a) *)
-               (*TYPE_none == env_variable already added. We don't want dubplicates*)
-               )(params the_fun)in
-     let _ = if(name = "main") then ignore(codegen_declars !global_decs) else ()in
-     let decls = sort_decls decls in
-     Printf.printf "decls length %d\n" (List.length decls);
-     let _ = codegen_declars decls in
-     let _ = print_hashtbl named_values in
-     if (ty = TYPE_proc) then
-       returns := false (* we have set a ret point yes *)
-     else
-       returns := true;
-     let bb = List.hd !fun_bbs in
-     position_at_end bb builder;
-     let _ =  codegen_states stms  in
+| Ast.Function_def(ty, name, parameters, decls, stms) ->
+   old_bindings := [];
+     
+   let llpars = Array.of_list (List.map param_type parameters) in 
+   let fun_typ = type_to_lltype ty in (* THATS WRONG HAVE TO CHANGE WITH MATCH *)
+   let ft = function_type fun_typ llpars in (* creates a function *)
+   let fn_name = String.concat "_" (name::!fun_names) in
+   let the_fun = (match lookup_function fn_name the_module with
+                  | None -> fun_names:= name :: !fun_names;
+                            declare_function fn_name ft the_module
+                  | Some f -> fun_names := name :: !fun_names; f ) in
+   (* create a new basic block for the function *)
+   let label = String.concat "_" [name;"entry"] in
+     
+   let bb= append_block context label the_fun in
+   fun_bbs := bb :: !fun_bbs;
+   position_at_end bb builder; (* point at the end of the new created block *)
+   (* we initialize the params and add them to Hashtable *)
+   let _ = Array.iteri(fun i a ->
+               let n = (List.nth parameters i) in
+               match n with
+               | Ast.By_val_param(ty, name) ->
+                  let typ = type_to_lltype ty in
+                  set_value_name name a;
+                  let alloca = build_alloca typ name builder in
+                  ignore(build_store a alloca builder);
+                  Hashtbl.add named_values name alloca
+               | Ast.By_ref_param(ty, name) ->
+                  set_value_name name a;
+                  Hashtbl.add named_values name a)
+                      (params the_fun)in
 
-     fun_bbs := List.tl !fun_bbs;
-     let next_bb = try List.hd !fun_bbs
-                   with Failure ("hd") -> bb in
-     fun_names := List.tl !fun_names;
-     Array.iteri(fun i a ->
-         let n = (List.nth parameters i) in (*used to be i*)
-         if(i >= (List.length parameters_old)) then () else
-           match n with
-           | Ast.By_val_param(ty, name) ->
-              Hashtbl.remove named_values name
-           | Ast.By_ref_param(ty, name) ->
-              Hashtbl.remove named_values name )
-                (params the_fun);
-     (*FREE DECLS*)
-     remove_variable_delcarations decls;
-     clear_env env_params;
-     env := remove_env !env; (* Go higher in env*)
-     Printf.printf ("Closing scope...\n");
-     print_env_pars !env;
-     print_hashtbl named_values;
-     if !returns = false then 
-       (ignore(build_ret_void builder); position_at_end next_bb builder; the_fun)
-     else
-       (
-         let _ = if (is_return_last_instuction stms) then () else ignore(build_ret (init_value ty) builder) in
-         position_at_end next_bb builder; the_fun );
+     
+   let _ = codegen_declars decls in
+   if (ty = TYPE_proc) then
+     returns := false (* we have set a ret point yes *)
+   else
+     returns := true;
+   let bb = List.hd !fun_bbs in
+   position_at_end bb builder;
+   let _ =  codegen_states stms  in
+
+   fun_bbs := List.tl !fun_bbs;
+   let next_bb = try List.hd !fun_bbs
+                 with Failure ("hd") -> bb in
+   fun_names := List.tl !fun_names;
+     
+   (* List.iter (fun (var_name, old_value) -> *)
+   (*     Hashtbl.add named_values var_name old_value *)
+   (*   ) !old_bindings; *)
+   (*YANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNIS*)
+   (* we initialize the params and add them to Hashtable *)
+   Array.iteri(fun i a ->
+       let n = (List.nth parameters i) in
+       match n with
+       | Ast.By_val_param(ty, name) ->
+          Hashtbl.remove named_values name
+       | Ast.By_ref_param(ty, name) ->
+          Hashtbl.remove named_values name )
+              (params the_fun);
+   (*FREE DECLS*)
+   remove_variable_delcarations decls;
+   (*YANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNIS*)   
+
+   if !returns = false then 
+     (ignore(build_ret_void builder); position_at_end next_bb builder; the_fun)
+   else
+     (
+       let _ = if (is_return_last_instuction stms) then () else ignore(build_ret (init_value ty) builder) in
+       position_at_end next_bb builder; the_fun );
 
 
 and codegen_states st = match st with
@@ -311,12 +213,11 @@ and codegen_statement st = match st with
   | Ast.Statements sts -> codegen_states sts
   | Ast.If_stmt(cond, stm) ->
      let condition = code_gen_exp cond in
-     let zero = if (String.contains(string_of_lltype(type_of condition)) '1') then  const_int (i1_type context) 0
-                else const_int (bool_type) 0 in
+     let _ = const_int integer_type 0 in
      let cond_val = if (is_pointer cond) then build_load condition "loadcon" builder
                     else condition in
-     let cond_val = build_icmp Icmp.Ne cond_val zero "ifcond" builder in
 
+     (* let cond_val = cond (\* build_fcmp Fcmp.One cond zero "ifcond" builder *\) in *)
 
      let start_bb = insertion_block builder in
      let the_function = block_parent start_bb in
@@ -349,13 +250,10 @@ and codegen_statement st = match st with
   | Ast.If_else_stmt(cond, stm1, stm2) ->
      let condition = code_gen_exp cond in
      
-     let zero = if (String.contains(string_of_lltype(type_of condition)) '1') then  const_int (i1_type context) 0
-                else const_int (bool_type) 0 in
-
+     let _ = const_int integer_type 0  in
      let cond_val = if (is_pointer cond) then build_load condition "loadcon" builder
                     else condition in
-
-     let cond_val = build_icmp Icmp.Ne cond_val zero "ifelsecond" builder in
+     (* let cond_val = condition (\* build_fcmp Fcmp.One condition zero "ifcond" builder *\) in *)
 
      let start_bb = insertion_block builder in (* start_bb contains the basic block *)
      let the_function = block_parent start_bb in
@@ -415,12 +313,8 @@ and codegen_statement st = match st with
                                                        
      in
      
-     let zero = if (String.contains(string_of_lltype(type_of loop_cond)) '1') then  const_int (i1_type context) 0
-                else const_int (bool_type) 0 in
-
-     let cond_val = build_icmp Icmp.Ne loop_cond zero "loopcond" builder in
-
-     (* let cond_val = loop_cond (\* build_fcmp Fcmp.One loop_cond zero "loopcond" builder *\) in *)
+     let _ = const_int integer_type 0 in
+     let cond_val = loop_cond (* build_fcmp Fcmp.One loop_cond zero "loopcond" builder *) in
 
      (* 3 now we point to the block in which we are *)
      let preheader_bb = insertion_block builder in
@@ -531,15 +425,4 @@ and init_value ty = (match ty with
                           let lltype = const_pointer_null lltype in
                           (* dump_value lltype; *) lltype)
                      |_ -> raise (Type_error "problem with value allocation"))
-
-
-
-
-           
-
-      
-    
-           
-
-
 
