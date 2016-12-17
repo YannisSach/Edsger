@@ -1,0 +1,10 @@
+# exclude everything except directory ml files
+/*
+!.gitignore
+!/Headers
+!*.ml
+!Makefile
+!*.mll
+!*.mly
+!*.sh
+!*.mli
