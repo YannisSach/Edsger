@@ -1,12 +1,15 @@
 FLAGS = -v
 BUILD-DIR = ./build
-OCAMLC = /home/yannis/.opam/4.03.0/bin/ocamlopt -c
-OCAMLCI = /home/yannis/.opam/4.03.0/bin/ocamlopt -i
+OCAMLOPT=/home/yannis/.opam/4.03.0/bin/ocamlopt
+OCAMLC = $(OCAMLOPT) -c
+OCAMLCI = $(OCAMLOPT) -i
+LLVM = /home/yannis/.opam/4.03.0/lib/llvm
+
 
 all: parser lexer types ast symbol scopes exp_code_gen code_gen compiler
-	/home/yannis/.opam/4.03.0/bin/ocamlopt -cc g++ -ccopt -L/usr/lib/llvm-3.5/lib -I /home/yannis/.opam/4.03.0/lib/llvm/  Error.cmx Hashcons.cmx Identifier.cmx Types.cmx Symbol.cmx llvm.cmxa llvm_analysis.cmxa str.cmxa TypeInference.cmx Symbtest.cmx  Ast.cmx Scopes.cmx Parser.cmx Lexer.cmx  ExpCodeGen.cmx Codegen.cmx Main.cmx -o compiler
+	$(OCAMLOPT) -cc g++ -ccopt -L/usr/lib/llvm-3.5/lib -I $(LLVM)  Error.cmx Hashcons.cmx Identifier.cmx Types.cmx Symbol.cmx llvm.cmxa llvm_analysis.cmxa str.cmxa TypeInference.cmx Symbtest.cmx  Ast.cmx Scopes.cmx Parser.cmx Lexer.cmx  ExpCodeGen.cmx Codegen.cmx Main.cmx -o compiler
 	cp compiler ./Testcases
-	cp compiler ./Tsan
+
 
 lexer: parser Lexer.mll       # generates lexer.ml
 	ocamllex Lexer.mll
