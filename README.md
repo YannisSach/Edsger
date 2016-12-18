@@ -1,2 +1,2 @@
 # Edsger
-A compiler implementation of Edsger programming language
+A compiler implementation of Edsger programming language.
