@@ -120,17 +120,33 @@ rule edsger = parse
                                   let len = (String.length include_rule)- 10 -1
                                   in let file = String.sub include_rule 10 len
                                      in
-				     if (not (SS.mem file file_set) )
-                                        then(
-                                          let _ = SS.add file file_set in
-                                          let lexbuf' = Lexing.from_channel (open_in file) in 
-                                          let _ = Parser.start edsger lexbuf' in
-                                          edsger lexbuf
-                                        )
-                                        else 
-                                          (Printf.printf "Include file: %s is already in parsing queue!\n" file; edsger lexbuf) (* A cycle just broken *)
+				     if (file = "stdio.h") then ( (* print_string"vrike stdio.h"; *)
+				       let lexbuf' = Lexing.from_string("void writeInteger (int n); void writeBoolean (bool b); void writeChar (char c); void writeReal (double d); void writeString (char * s);  int readInteger (); bool readBoolean (); char readChar (); double readReal (); void readString (int size, char * s);") in
+				       let _ = Parser.start edsger lexbuf' in
+				       edsger lexbuf) 
+				     else if (file = "math.h") then (
+				       let lexbuf' = Lexing.from_string ("int abs (int n); double fabs (double d); double sqrt (double d); double sin (double d); double cos (double d); double tan (double d); double atan (double d); double atan (double d); double atan (double d); double pi ();" ) in
+				       let _ = Parser.start edsger lexbuf' in
+				       edsger lexbuf)
+				     else if (file = "stdlib.h") then (
+				       let lexbuf' = Lexing.from_string ("int trunc (double d); int round (double d); int ord (char c); char chr (int n);") in
+				       let _ = Parser.start edsger lexbuf' in
+				       edsger lexbuf)
+				     else if (file = "string.h") then (
+				       let lexbuf' = Lexing.from_string ("int strlen (char * s); int strcmp (char * s1, char * s2); void strcpy (char * trg, char * src); void strcat (char * trg, char * src);" ) in
+				       let _ = Parser.start edsger lexbuf' in
+				       edsger lexbuf)
+				     else if (not (SS.mem file file_set) )
+                                     then(
+                                       let _ = SS.add file file_set in
+                                       let lexbuf' = Lexing.from_channel (open_in file) in 
+                                       let _ = Parser.start edsger lexbuf' in
+                                       edsger lexbuf
+                                     )
+                                     else 
+                                       (Printf.printf "Include file: %s is already in parsing queue!\n" file; edsger lexbuf) (* A cycle just broken *)
                                 }
-  | eof 	{ T_EOF}
+             | eof 	{ T_EOF}
 
                
 and multiline_comment = parse
