@@ -6,9 +6,9 @@ open Llvm
   
 let _ =
   try
-    let i = Array.length Sys.argv in
+    let i = Array.length Sys.argv in 
     let arg_list = Array.to_list Sys.argv in
-    let arg_list = List.tl arg_list in
+    let arg_list = List.tl arg_list in (* remove executable *)
     let has_opt opt el = opt = el in
     let (stdin_final,arg_list) = List.partition (has_opt "-f") arg_list in
     let stdin_final = match stdin_final with [] -> false | _ -> true in
@@ -16,8 +16,9 @@ let _ =
     let stdin_ir = match stdin_ir with [] -> false | _ -> true in
     let (ast, arg_list) = List.partition (has_opt "--ast") arg_list in
     let ast = match ast with [] -> false | _ -> true in
+    let (_, arg_list) = List.partition (has_opt "-O") arg_list in (*We don't care about optimizations*)
     let program_name = if(stdin_final || stdin_ir) then "stdin" else (List.hd arg_list) in
-    (* let _ = Printf.printf "Reading from %s\n" program_name in *)
+    let _ = Printf.printf "Reading from %s\n" program_name in
     let channel = if(stdin_final || stdin_ir) then stdin else open_in(List.hd arg_list) in
     let lexbuf = Lexing.from_channel (channel) in
     let _ = SS.add (program_name) in

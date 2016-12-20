@@ -9,7 +9,7 @@ LLVM = /home/yannis/.opam/4.03.0/lib/llvm
 all: parser lexer types ast symbol scopes exp_code_gen code_gen compiler
 	$(OCAMLOPT) -cc g++ -ccopt -L/usr/lib/llvm-3.5/lib -I $(LLVM)  Error.cmx Hashcons.cmx Identifier.cmx Types.cmx Symbol.cmx llvm.cmxa llvm_analysis.cmxa str.cmxa TypeInference.cmx Symbtest.cmx  Ast.cmx Scopes.cmx Parser.cmx Lexer.cmx  ExpCodeGen.cmx Codegen.cmx Main.cmx -o compiler
 	cp compiler ./Testcases
-
+	cp Edsger.sh ./Testcases
 
 lexer: parser Lexer.mll       # generates lexer.ml
 	ocamllex Lexer.mll
@@ -76,5 +76,5 @@ clean:
 	$(RM) *.cmo *.cmx *.o *.cmi Parser.mli  Parser.ml Parser.output Lexer.ml 
 
 distclean: clean
-	$(RM) compiler
+	$(RM) compiler ./Testcases/compiler ./Testcases/Edsger.sh
 
