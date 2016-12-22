@@ -30,7 +30,4 @@ let _ =
     print_module (String.concat "" [program_name;".ll"]) Codegen.the_module;
     let _ = if(stdin_ir)then dump_module Codegen.the_module else () in exit(0)
   with Parsing.Parse_error ->
-    Printf.printf "Parsing error. Compilation aborted.\n" 
-
-
-
+Printf.printf "Parsing error. Compilation aborted.\n"
