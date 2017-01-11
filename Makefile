@@ -1,9 +1,9 @@
 FLAGS = -v
 BUILD-DIR = ./build
-OCAMLOPT=/home/yannis/.opam/4.03.0/bin/ocamlopt
+OCAMLOPT=/home/$(USER)/.opam/4.03.0/bin/ocamlopt
 OCAMLC = $(OCAMLOPT) -c
 OCAMLCI = $(OCAMLOPT) -i
-LLVM = /home/yannis/.opam/4.03.0/lib/llvm
+LLVM = /home/$(USER)/.opam/4.03.0/lib/llvm
 
 
 all: parser lexer types ast symbol scopes exp_code_gen code_gen compiler

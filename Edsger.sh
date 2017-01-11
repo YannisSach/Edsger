@@ -20,7 +20,7 @@ for i in $@; do
 	*)
 	    echo "Usage: ./Edsger.sh [options] file..."
 	    echo "Options:"
-	    echo -e '-o\t optimized'
+	    echo -e '-O\t optimized'
 	    echo -e '-f\t program at stdin and final code at stdout'
 	    echo -e '-i\t program at stdin and intermediate code at stdout'
 	    exit
