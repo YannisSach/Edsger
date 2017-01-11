@@ -67,10 +67,10 @@ type_inference : TypeInference.ml symbol
 	$(OCAMLC) TypeInference.ml
 
 exp_code_gen: ExpCodeGen.ml
-	$(OCAMLC) -I /home/yannis/.opam/4.03.0/lib/llvm ExpCodeGen.ml
+	$(OCAMLC) -I /home/$(USER)/.opam/4.03.0/lib/llvm ExpCodeGen.ml
 
 code_gen: Codegen.ml
-	$(OCAMLC) -I /home/yannis/.opam/4.03.0/lib/llvm Codegen.ml
+	$(OCAMLC) -I /home/$(USER)/.opam/4.03.0/lib/llvm Codegen.ml
 
 clean: 
 	$(RM) *.cmo *.cmx *.o *.cmi Parser.mli  Parser.ml Parser.output Lexer.ml 
